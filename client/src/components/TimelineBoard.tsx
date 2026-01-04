@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import type { Command } from '../types';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 interface TimelineBoardProps {
   commands: Command[];
   onCommandClick?: (command: Command) => void;
+  onCreateCommand?: (deadline: string) => void;
 }
 
 type TimelineView = 'week' | 'month' | 'year';
 
-export default function TimelineBoard({ commands, onCommandClick }: TimelineBoardProps) {
+export default function TimelineBoard({ commands, onCommandClick, onCreateCommand }: TimelineBoardProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<TimelineView>('month');
 
@@ -236,6 +237,20 @@ export default function TimelineBoard({ commands, onCommandClick }: TimelineBoar
         </div>
 
         <div className="flex gap-2">
+          {onCreateCommand && (
+            <button
+              onClick={() => {
+                const now = new Date();
+                now.setHours(12, 0, 0, 0);
+                onCreateCommand(now.toISOString());
+              }}
+              className="flex items-center gap-1 px-3 py-1 bg-terminal-green/20 hover:bg-terminal-green/30
+                         rounded text-terminal-green font-mono text-xs transition-colors"
+            >
+              <Plus size={14} />
+              Push
+            </button>
+          )}
           <button
             onClick={goPrevious}
             className="p-1 hover:bg-terminal-border/30 rounded text-terminal-text"

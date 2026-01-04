@@ -4,6 +4,7 @@ import ScheduleDashboard from './components/ScheduleDashboard';
 import ContextExplorer from './components/ContextExplorer';
 import CommandInput from './components/CommandInput';
 import CommandDetailModal from './components/CommandDetailModal';
+import CommandCreateForm from './components/CommandCreateForm';
 import type { Command, Context } from './types';
 
 // Mock Data: Contexts
@@ -120,6 +121,7 @@ function App() {
   const [isArchiveView, setIsArchiveView] = useState(false);
   const [nextId, setNextId] = useState(1011);
   const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
+  const [createFormDeadline, setCreateFormDeadline] = useState<string | null>(null);
 
   const handleAddCommand = (newCommand: Omit<Command, 'id'>) => {
     const command: Command = {
@@ -184,6 +186,10 @@ function App() {
     handleStatusChange(id, 'SIGKILL');
   };
 
+  const handleCreateCommand = (deadline: string) => {
+    setCreateFormDeadline(deadline);
+  };
+
   // ESC key to close modal
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -231,6 +237,7 @@ function App() {
           <ScheduleDashboard
             commands={commands}
             onCommandClick={handleCommandClick}
+            onCreateCommand={handleCreateCommand}
             isArchiveView={isArchiveView}
             onToggleArchive={() => setIsArchiveView(true)}
           />
@@ -257,6 +264,16 @@ function App() {
           onClose={() => setSelectedCommand(null)}
           onStatusChange={isArchiveView ? undefined : handleStatusChange}
           onDelete={isArchiveView ? undefined : handleDeleteCommand}
+        />
+      )}
+
+      {/* Command Create Form */}
+      {createFormDeadline && (
+        <CommandCreateForm
+          contexts={MOCK_CONTEXTS}
+          prefilledDeadline={createFormDeadline}
+          onSubmit={handleAddCommand}
+          onClose={() => setCreateFormDeadline(null)}
         />
       )}
     </div>

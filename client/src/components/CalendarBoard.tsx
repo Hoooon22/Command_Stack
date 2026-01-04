@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import type { Command } from '../types';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 interface CalendarBoardProps {
   commands: Command[];
   onCommandClick?: (command: Command) => void;
+  onCreateCommand?: (deadline: string) => void;
 }
 
-export default function CalendarBoard({ commands, onCommandClick }: CalendarBoardProps) {
+export default function CalendarBoard({ commands, onCommandClick, onCreateCommand }: CalendarBoardProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const barHeight = 18;
   const barGap = 4;
@@ -151,6 +152,20 @@ export default function CalendarBoard({ commands, onCommandClick }: CalendarBoar
           {monthNames[month]} {year}
         </h2>
         <div className="flex gap-2">
+          {onCreateCommand && (
+            <button
+              onClick={() => {
+                const now = new Date();
+                now.setHours(12, 0, 0, 0);
+                onCreateCommand(now.toISOString());
+              }}
+              className="flex items-center gap-1 px-3 py-1 bg-terminal-green/20 hover:bg-terminal-green/30
+                         rounded text-terminal-green font-mono text-xs transition-colors"
+            >
+              <Plus size={14} />
+              Push
+            </button>
+          )}
           <button
             onClick={prevMonth}
             className="p-1 hover:bg-terminal-border/30 rounded text-terminal-text"
@@ -205,6 +220,12 @@ export default function CalendarBoard({ commands, onCommandClick }: CalendarBoar
                         ${isToday ? 'bg-terminal-green/10' : ''}
                       `}
                       style={{ paddingTop: `${cellTopPadding}px` }}
+                      onClick={() => {
+                        if (day && onCreateCommand) {
+                          const deadline = new Date(year, month, day, 12, 0, 0);
+                          onCreateCommand(deadline.toISOString());
+                        }
+                      }}
                     >
                       {day && (
                         <>

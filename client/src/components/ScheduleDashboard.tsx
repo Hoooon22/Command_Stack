@@ -6,6 +6,7 @@ import TimelineBoard from './TimelineBoard';
 interface ScheduleDashboardProps {
   commands: Command[];
   onCommandClick?: (command: Command) => void;
+  onCreateCommand?: (deadline: string) => void;
   isArchiveView?: boolean;
   onToggleArchive?: () => void;
 }
@@ -15,6 +16,7 @@ type ScheduleView = 'calendar' | 'timeline';
 export default function ScheduleDashboard({
   commands,
   onCommandClick,
+  onCreateCommand,
   isArchiveView = false,
   onToggleArchive,
 }: ScheduleDashboardProps) {
@@ -64,9 +66,17 @@ export default function ScheduleDashboard({
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         {scheduleView === 'calendar' ? (
-          <CalendarBoard commands={commands} onCommandClick={onCommandClick} />
+          <CalendarBoard
+            commands={commands}
+            onCommandClick={onCommandClick}
+            onCreateCommand={onCreateCommand}
+          />
         ) : (
-          <TimelineBoard commands={commands} onCommandClick={onCommandClick} />
+          <TimelineBoard
+            commands={commands}
+            onCommandClick={onCommandClick}
+            onCreateCommand={onCreateCommand}
+          />
         )}
       </div>
     </div>
