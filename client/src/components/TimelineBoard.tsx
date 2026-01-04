@@ -129,22 +129,46 @@ export default function TimelineBoard({ commands, onCommandClick }: TimelineBoar
     }
   };
 
+  const getClampedWeekPosition = (timestamp: string, clampToEnd: boolean) => {
+    const date = new Date(timestamp);
+    const startOfWeek = new Date(currentDate);
+    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+
+    if (date < startOfWeek) return 0;
+    if (date >= endOfWeek) return 100;
+
+    const dayOfWeek = date.getDay();
+    const hourFraction = (date.getHours() + date.getMinutes() / 60) / 24;
+    const pos = ((dayOfWeek + hourFraction) / 7) * 100;
+    return clampToEnd ? Math.min(100, pos) : Math.max(0, pos);
+  };
+
   // Calculate execution bar positions
   const getExecutionBar = (cmd: Command) => {
     if (!cmd.startedAt) return null;
 
-    const startPos = getTimePosition(cmd.startedAt);
+    const startPos = viewMode === 'week'
+      ? getClampedWeekPosition(cmd.startedAt, false)
+      : getTimePosition(cmd.startedAt);
     if (startPos === null) return null;
 
     let endPos: number | null;
 
     if (cmd.completedAt) {
-      endPos = getTimePosition(cmd.completedAt);
+      endPos = viewMode === 'week'
+        ? getClampedWeekPosition(cmd.completedAt, true)
+        : getTimePosition(cmd.completedAt);
     } else if (cmd.deadline) {
-      endPos = getTimePosition(cmd.deadline);
+      endPos = viewMode === 'week'
+        ? getClampedWeekPosition(cmd.deadline, true)
+        : getTimePosition(cmd.deadline);
     } else {
       // If no end time, use current time
-      endPos = getTimePosition(new Date().toISOString());
+      endPos = viewMode === 'week'
+        ? getClampedWeekPosition(new Date().toISOString(), true)
+        : getTimePosition(new Date().toISOString());
     }
 
     if (endPos === null) return null;
@@ -170,11 +194,17 @@ export default function TimelineBoard({ commands, onCommandClick }: TimelineBoar
   };
 
   const getTypeColor = (type: Command['type']) => {
-    return type === 'SCHEDULE' ? 'bg-terminal-green' : 'bg-terminal-text/60';
+    return type === 'SCHEDULE' ? 'bg-terminal-green' : 'bg-terminal-cyan';
   };
 
   const getTypeLabel = (type: Command['type']) => {
     return type === 'SCHEDULE' ? 'Schedule' : 'Task';
+  };
+
+  const getTypeBadgeClass = (type: Command['type']) => {
+    return type === 'SCHEDULE'
+      ? 'bg-terminal-green/20 text-terminal-green'
+      : 'bg-terminal-cyan/20 text-terminal-cyan';
   };
 
   return (
@@ -263,9 +293,14 @@ export default function TimelineBoard({ commands, onCommandClick }: TimelineBoar
                     onClick={() => onCommandClick?.(cmd)}
                   >
                     {/* Command Name */}
-                    <div className="w-48 flex-shrink-0 pr-4">
+                    <div className="w-48 flex-shrink-0 pr-4 relative">
                       <div className="text-sm text-terminal-text font-mono truncate group-hover:text-terminal-green transition-colors">
                         {cmd.syntax}
+                      </div>
+                      <div className="absolute left-0 top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                        <div className="bg-terminal-bg border border-terminal-border px-2 py-1 rounded text-xs font-mono text-terminal-text max-w-[220px]">
+                          {cmd.details}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-terminal-text/40 font-mono">
@@ -273,9 +308,7 @@ export default function TimelineBoard({ commands, onCommandClick }: TimelineBoar
                         </span>
                         <span className={`
                           text-xs px-1 py-0.5 rounded font-mono
-                          ${cmd.type === 'SCHEDULE'
-                            ? 'bg-terminal-green/20 text-terminal-green'
-                            : 'bg-terminal-border/20 text-terminal-text/60'}
+                          ${getTypeBadgeClass(cmd.type)}
                         `}>
                           {getTypeLabel(cmd.type)}
                         </span>

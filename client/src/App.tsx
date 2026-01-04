@@ -18,6 +18,7 @@ const INITIAL_COMMANDS: Command[] = [
   {
     id: 1001,
     syntax: 'Refactor authentication module',
+    details: 'Split auth flow into middleware, add refresh token handling, and update unit coverage.',
     status: 'EXECUTING',
     type: 'TASK',
     contextId: 1,
@@ -27,6 +28,7 @@ const INITIAL_COMMANDS: Command[] = [
   {
     id: 1002,
     syntax: 'Write unit tests for API endpoints',
+    details: 'Cover edge cases for rate limiting, payload validation, and error formatting.',
     status: 'PENDING',
     type: 'TASK',
     contextId: 1,
@@ -35,6 +37,7 @@ const INITIAL_COMMANDS: Command[] = [
   {
     id: 1003,
     syntax: 'Code review for pull request #42',
+    details: 'Focus on data migrations, backward compatibility, and rollback safety.',
     status: 'PENDING',
     type: 'TASK',
     contextId: 1,
@@ -43,6 +46,7 @@ const INITIAL_COMMANDS: Command[] = [
   {
     id: 1004,
     syntax: 'Deploy to staging environment',
+    details: 'Verify build artifacts, run smoke tests, and confirm environment variables.',
     status: 'PENDING',
     type: 'SCHEDULE',
     contextId: 1,
@@ -51,6 +55,7 @@ const INITIAL_COMMANDS: Command[] = [
   {
     id: 1005,
     syntax: 'Morning workout routine',
+    details: 'Strength training + 20 min cardio. Track heart rate and cooldown.',
     status: 'EXIT_SUCCESS',
     type: 'SCHEDULE',
     contextId: 2,
@@ -61,6 +66,7 @@ const INITIAL_COMMANDS: Command[] = [
   {
     id: 1006,
     syntax: 'Buy groceries',
+    details: 'Milk, eggs, protein, and fresh vegetables for the week.',
     status: 'PENDING',
     type: 'TASK',
     contextId: 2,
@@ -69,6 +75,7 @@ const INITIAL_COMMANDS: Command[] = [
   {
     id: 1007,
     syntax: 'Team meeting - Sprint planning',
+    details: 'Finalize scope, assign owners, and lock next sprint goals.',
     status: 'PENDING',
     type: 'SCHEDULE',
     contextId: 1,
@@ -77,6 +84,7 @@ const INITIAL_COMMANDS: Command[] = [
   {
     id: 1008,
     syntax: 'Explore Rust for system programming',
+    details: 'Prototype CLI parser and benchmark memory usage.',
     status: 'PENDING',
     type: 'TASK',
     contextId: 3,
@@ -85,6 +93,7 @@ const INITIAL_COMMANDS: Command[] = [
   {
     id: 1009,
     syntax: 'Read research paper on distributed systems',
+    details: 'Summarize consensus model and note open questions.',
     status: 'PENDING',
     type: 'TASK',
     contextId: 3,
@@ -93,6 +102,7 @@ const INITIAL_COMMANDS: Command[] = [
   {
     id: 1010,
     syntax: 'Evening meditation',
+    details: '10-minute breathing session, log focus level.',
     status: 'PENDING',
     type: 'SCHEDULE',
     contextId: 2,
@@ -128,6 +138,7 @@ function App() {
 
     handleAddCommand({
       syntax,
+      details: 'Quick push entry. Add execution notes when ready.',
       status: 'PENDING',
       type: 'TASK',
       contextId: MOCK_CONTEXTS[0].id,

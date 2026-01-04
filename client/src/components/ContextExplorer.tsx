@@ -23,6 +23,7 @@ export default function ContextExplorer({
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     syntax: '',
+    details: '',
     deadline: '',
     type: 'TASK' as const,
   });
@@ -37,6 +38,7 @@ export default function ContextExplorer({
 
     onAddCommand({
       syntax: formData.syntax,
+      details: formData.details.trim() || 'No details recorded yet.',
       status: 'PENDING',
       type: formData.type,
       contextId: selectedContextId,
@@ -45,6 +47,7 @@ export default function ContextExplorer({
 
     setFormData({
       syntax: '',
+      details: '',
       deadline: '',
       type: 'TASK',
     });
@@ -100,6 +103,17 @@ export default function ContextExplorer({
                   placeholder="Enter command description..."
                   className="w-full px-3 py-2 bg-terminal-bg text-terminal-text border border-terminal-border rounded font-mono text-sm outline-none focus:border-terminal-green"
                   autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-terminal-text/60 mb-1 font-mono">
+                  Details
+                </label>
+                <textarea
+                  value={formData.details}
+                  onChange={(e) => setFormData({ ...formData, details: e.target.value })}
+                  placeholder="Add implementation notes or next steps..."
+                  className="w-full px-3 py-2 bg-terminal-bg text-terminal-text border border-terminal-border rounded font-mono text-sm outline-none focus:border-terminal-green min-h-[80px] resize-y"
                 />
               </div>
 

@@ -40,14 +40,14 @@ export default function StackItem({ command, onClick }: StackItemProps) {
   const getTypeClass = () => {
     return command.type === 'SCHEDULE'
       ? 'bg-terminal-green/20 text-terminal-green'
-      : 'bg-terminal-border/20 text-terminal-text/60';
+      : 'bg-terminal-cyan/20 text-terminal-cyan';
   };
 
   return (
     <div
       onClick={onClick}
       className={`
-        border rounded px-4 py-3 mb-2 cursor-pointer
+        group relative border rounded px-4 py-3 mb-2 cursor-pointer
         transition-all hover:shadow-lg
         ${getStatusStyle()}
       `}
@@ -73,6 +73,11 @@ export default function StackItem({ command, onClick }: StackItemProps) {
           <p className="text-sm text-terminal-text break-words">
             {command.syntax}
           </p>
+          <div className="absolute left-4 top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+            <div className="bg-terminal-bg border border-terminal-border px-2 py-1 rounded text-xs font-mono text-terminal-text max-w-[220px]">
+              {command.details}
+            </div>
+          </div>
 
           {command.deadline && (
             <div className="mt-2 text-xs text-terminal-text/40">

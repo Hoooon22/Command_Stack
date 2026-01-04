@@ -4,6 +4,7 @@ export type CommandType = 'TASK' | 'SCHEDULE';
 export interface Command {
   id: number;
   syntax: string;
+  details: string;
   status: CommandStatus;
   type: CommandType;
   contextId: number;

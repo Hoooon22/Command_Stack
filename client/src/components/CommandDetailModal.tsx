@@ -45,7 +45,7 @@ export default function CommandDetailModal({
   const getTypeColor = () => {
     return command.type === 'SCHEDULE'
       ? 'text-terminal-green'
-      : 'text-terminal-text/60';
+      : 'text-terminal-cyan';
   };
 
   const getTypeLabel = () => {
@@ -95,6 +95,16 @@ export default function CommandDetailModal({
             <div className="bg-terminal-border/10 border border-terminal-border rounded p-4">
               <p className="text-terminal-text font-mono text-sm leading-relaxed">
                 {command.syntax}
+              </p>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs text-terminal-text/50 font-mono mb-2">
+              DETAILS
+            </label>
+            <div className="bg-terminal-border/10 border border-terminal-border rounded p-4">
+              <p className="text-terminal-text/80 font-mono text-sm leading-relaxed">
+                {command.details}
               </p>
             </div>
           </div>

@@ -9,6 +9,10 @@ interface CalendarBoardProps {
 
 export default function CalendarBoard({ commands, onCommandClick }: CalendarBoardProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const barHeight = 18;
+  const barGap = 4;
+  const dayLabelHeight = 22;
+  const baseCellTop = dayLabelHeight + 8;
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -26,24 +30,104 @@ export default function CalendarBoard({ commands, onCommandClick }: CalendarBoar
     calendarDays.push(day);
   }
 
-  // Split into weeks (7 days per week)
-  const weeks: (number | null)[][] = [];
-  for (let i = 0; i < calendarDays.length; i += 7) {
-    weeks.push(calendarDays.slice(i, i + 7));
-  }
+  const isSameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  const normalizeDay = (date: Date) =>
+    new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  const isWithinRangeDay = (target: Date, start: Date, end: Date) => {
+    const targetDay = normalizeDay(target).getTime();
+    const startDay = normalizeDay(start).getTime();
+    const endDay = normalizeDay(end).getTime();
+    return targetDay >= startDay && targetDay <= endDay;
+  };
+
+  const gridStartDate = new Date(year, month, 1);
+  gridStartDate.setDate(gridStartDate.getDate() - firstDay);
+
+  const weekCount = Math.ceil(calendarDays.length / 7);
+  const weeks = Array.from({ length: weekCount }, (_, weekIdx) =>
+    calendarDays.slice(weekIdx * 7, weekIdx * 7 + 7)
+  );
 
   const getCommandsForDay = (day: number | null) => {
     if (!day) return [];
     const targetDate = new Date(year, month, day);
     return commands.filter(cmd => {
       if (!cmd.deadline) return false;
-      const cmdDate = new Date(cmd.deadline);
-      return (
-        cmdDate.getFullYear() === targetDate.getFullYear() &&
-        cmdDate.getMonth() === targetDate.getMonth() &&
-        cmdDate.getDate() === targetDate.getDate()
-      );
+      if (cmd.type === 'SCHEDULE' && cmd.startedAt) return false;
+      const deadlineDate = new Date(cmd.deadline);
+      return isSameDay(deadlineDate, targetDate);
     });
+  };
+
+  const getTypeClass = (type: Command['type']) => {
+    return type === 'SCHEDULE'
+      ? 'bg-terminal-green/20 text-terminal-green hover:bg-terminal-green/30'
+      : 'bg-terminal-cyan/20 text-terminal-cyan hover:bg-terminal-cyan/30';
+  };
+
+  const getWeekSpans = (weekIdx: number) => {
+    const weekStart = new Date(gridStartDate);
+    weekStart.setDate(gridStartDate.getDate() + weekIdx * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const spans = commands
+      .filter(cmd => cmd.type === 'SCHEDULE' && cmd.startedAt && cmd.deadline)
+      .map(cmd => {
+        const startDate = new Date(cmd.startedAt!);
+        const endDate = new Date(cmd.deadline!);
+        const spanStart = startDate <= endDate ? startDate : endDate;
+        const spanEnd = startDate <= endDate ? endDate : startDate;
+        return { cmd, spanStart, spanEnd };
+      })
+      .filter(({ spanStart, spanEnd }) =>
+        isWithinRangeDay(weekStart, spanStart, spanEnd) ||
+        isWithinRangeDay(weekEnd, spanStart, spanEnd) ||
+        isWithinRangeDay(spanStart, weekStart, weekEnd)
+      )
+      .map(({ cmd, spanStart, spanEnd }) => {
+        const start = spanStart < weekStart ? weekStart : spanStart;
+        const end = spanEnd > weekEnd ? weekEnd : spanEnd;
+        const startCol = Math.max(0, Math.round((normalizeDay(start).getTime() - normalizeDay(weekStart).getTime()) / (1000 * 60 * 60 * 24)));
+        const endCol = Math.max(0, Math.round((normalizeDay(end).getTime() - normalizeDay(weekStart).getTime()) / (1000 * 60 * 60 * 24)));
+        const durationDays = Math.round((normalizeDay(spanEnd).getTime() - normalizeDay(spanStart).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        return {
+          cmd,
+          startCol,
+          endCol,
+          isSpanStart: isSameDay(start, spanStart),
+          isSpanEnd: isSameDay(end, spanEnd),
+          durationDays,
+        };
+      })
+      .sort((a, b) => b.durationDays - a.durationDays || a.startCol - b.startCol);
+
+    const rows: Array<{ ranges: Array<{ start: number; end: number }> }> = [];
+    const placed = spans.map(span => {
+      let rowIndex = 0;
+      while (rowIndex < rows.length) {
+        const hasOverlap = rows[rowIndex].ranges.some(range =>
+          !(span.endCol < range.start || span.startCol > range.end)
+        );
+        if (!hasOverlap) break;
+        rowIndex += 1;
+      }
+      if (!rows[rowIndex]) {
+        rows[rowIndex] = { ranges: [] };
+      }
+      rows[rowIndex].ranges.push({ start: span.startCol, end: span.endCol });
+      return { ...span, rowIndex };
+    });
+
+    return {
+      spans: placed,
+      rowCount: rows.length,
+    };
   };
 
   const prevMonth = () => {
@@ -95,56 +179,108 @@ export default function CalendarBoard({ commands, onCommandClick }: CalendarBoar
       </div>
 
       {/* Calendar Grid - Week by Week */}
-      <div className="flex-1 overflow-y-auto">
-        {weeks.map((week, weekIdx) => (
-          <div key={weekIdx} className="grid grid-cols-7">
-            {week.map((day, dayIdx) => {
-              const dayCommands = getCommandsForDay(day);
-              const isToday =
-                day !== null &&
-                new Date().getDate() === day &&
-                new Date().getMonth() === month &&
-                new Date().getFullYear() === year;
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        {weeks.map((week, weekIdx) => {
+          const { spans, rowCount } = getWeekSpans(weekIdx);
+          const barBlockHeight = rowCount ? rowCount * barHeight + (rowCount - 1) * barGap : 0;
+          const cellTopPadding = baseCellTop + (barBlockHeight ? barBlockHeight + 8 : 0);
 
-              return (
-                <div
-                  key={dayIdx}
-                  className={`
-                    border-r border-b border-terminal-border p-2 min-h-[100px]
-                    ${day ? 'hover:bg-terminal-border/10 cursor-pointer' : 'bg-terminal-border/5'}
-                    ${isToday ? 'bg-terminal-green/10' : ''}
-                  `}
-                >
-                  {day && (
-                    <>
-                      <div className={`
-                        text-xs font-mono mb-1
-                        ${isToday ? 'text-terminal-green font-bold' : 'text-terminal-text/60'}
-                      `}>
-                        {day}
-                      </div>
-                      <div className="space-y-1">
-                        {dayCommands.map(cmd => (
-                          <div
-                            key={cmd.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onCommandClick?.(cmd);
-                            }}
-                            className="text-xs truncate px-1 py-0.5 rounded bg-terminal-green/20 text-terminal-green hover:bg-terminal-green/30 cursor-pointer transition-colors"
-                            title={cmd.syntax}
-                          >
-                            {cmd.syntax}
+          return (
+            <div key={weekIdx} className="relative overflow-visible" style={{ position: 'relative', zIndex: 1 }}>
+              <div className="grid grid-cols-7 relative overflow-visible z-20">
+                {week.map((day, dayIdx) => {
+                  const dayCommands = getCommandsForDay(day);
+                  const isToday =
+                    day !== null &&
+                    new Date().getDate() === day &&
+                    new Date().getMonth() === month &&
+                    new Date().getFullYear() === year;
+
+                  return (
+                    <div
+                      key={dayIdx}
+                      className={`
+                        relative border-r border-b border-terminal-border p-2 min-h-[100px] overflow-visible
+                        ${day ? 'hover:bg-terminal-border/10 cursor-pointer' : 'bg-terminal-border/5'}
+                        ${isToday ? 'bg-terminal-green/10' : ''}
+                      `}
+                      style={{ paddingTop: `${cellTopPadding}px` }}
+                    >
+                      {day && (
+                        <>
+                          <div className={`
+                            absolute top-2 left-2 text-xs font-mono
+                            ${isToday ? 'text-terminal-green font-bold' : 'text-terminal-text/60'}
+                          `}>
+                            {day}
                           </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                          <div className="space-y-1 relative z-40">
+                            {dayCommands.map(cmd => (
+                              <div
+                                key={cmd.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onCommandClick?.(cmd);
+                                }}
+                                className={`text-xs truncate px-1 py-0.5 rounded cursor-pointer transition-colors ${getTypeClass(cmd.type)}`}
+                                title={cmd.syntax}
+                              >
+                                {cmd.syntax}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {rowCount > 0 && (
+                <div
+                  className="absolute left-0 right-0 grid grid-cols-7 gap-0 z-30 px-1"
+                  style={{
+                    top: `${baseCellTop}px`,
+                    rowGap: `${barGap}px`,
+                    gridAutoRows: `${barHeight}px`,
+                  }}
+                >
+                  {spans.map(span => (
+                    <button
+                      key={span.cmd.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCommandClick?.(span.cmd);
+                      }}
+                      className={`
+                        h-full bg-terminal-green/30 border border-terminal-green/60
+                        text-[11px] text-terminal-green font-mono px-2 flex items-center
+                        hover:bg-terminal-green/40 cursor-pointer transition-colors mx-0.5
+                        ${span.isSpanStart ? 'rounded-l' : ''}
+                        ${span.isSpanEnd ? 'rounded-r' : ''}
+                      `}
+                      style={{
+                        gridColumnStart: span.startCol + 1,
+                        gridColumnEnd: span.endCol + 2,
+                        gridRowStart: span.rowIndex + 1,
+                      }}
+                      title={span.cmd.syntax}
+                    >
+                      {!span.isSpanStart && (
+                        <span className="absolute left-0 top-0 bottom-0 w-3 bg-gradient-to-r from-terminal-green/60 to-transparent pointer-events-none" />
+                      )}
+                      {!span.isSpanEnd && (
+                        <span className="absolute right-0 top-0 bottom-0 w-3 bg-gradient-to-l from-terminal-green/60 to-transparent pointer-events-none" />
+                      )}
+                      <span className="relative z-10 truncate pointer-events-none">
+                        {span.cmd.syntax}
+                      </span>
+                    </button>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-        ))}
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
