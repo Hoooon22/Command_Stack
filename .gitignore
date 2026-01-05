@@ -13,3 +13,18 @@ build/
 
 coverage/
 *.log
+
+# Electron
+electron/dist/
+*.dmg
+*.exe
+*.AppImage
+*.deb
+
+# Database
+data/
+*.mv.db
+*.trace.db
+
+# User data (local testing)
+.devzip/

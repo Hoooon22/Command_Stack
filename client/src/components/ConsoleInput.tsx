@@ -1,4 +1,5 @@
-import { useState, KeyboardEvent, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import type { KeyboardEvent } from 'react';
 import { Terminal } from 'lucide-react';
 
 // Available commands

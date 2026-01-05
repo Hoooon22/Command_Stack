@@ -1,0 +1,87 @@
+{
+  "name": "commandstack-electron",
+  "version": "1.0.1",
+  "description": "CommandStack - Developer-centric personal management system",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\" \"wait-on http://localhost:5173 http://localhost:8080 && electron .\"",
+    "dev:client": "cd ../client && npm run dev",
+    "dev:server": "cd ../server && ./gradlew bootRun",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "cd ../client && npm run build",
+    "build:server": "cd ../server && ./gradlew bootJar",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.devzip.commandstack",
+    "productName": "CommandStack",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "../client/dist/**/*",
+      "../server/build/libs/*.jar"
+    ],
+    "extraResources": [
+      {
+        "from": "../client/dist",
+        "to": "client/dist"
+      },
+      {
+        "from": "../server/build/libs",
+        "to": "server",
+        "filter": ["*.jar"]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "assets/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist"
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "target": ["AppImage", "deb"],
+      "category": "Utility"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.7"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1",
+    "wait-on": "^7.2.0"
+  }
+}

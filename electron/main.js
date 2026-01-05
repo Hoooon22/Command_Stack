@@ -1,0 +1,289 @@
+const { app, BrowserWindow, Menu, shell } = require('electron');
+const { spawn } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+const { autoUpdater } = require('electron-updater');
+
+let mainWindow;
+let serverProcess;
+const isDev = process.env.NODE_ENV === 'development';
+
+// 사용자 데이터 디렉토리 설정
+const userDataPath = path.join(app.getPath('home'), '.devzip', 'commandstack');
+const dbPath = path.join(userDataPath, 'database');
+const configPath = path.join(userDataPath, 'config');
+const logsPath = path.join(userDataPath, 'logs');
+
+// 디렉토리 생성
+function ensureDirectories() {
+  [userDataPath, dbPath, configPath, logsPath].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log(`Created directory: ${dir}`);
+    }
+  });
+}
+
+// Spring Boot 서버 시작
+function startServer() {
+  ensureDirectories();
+
+  const jarPath = isDev
+    ? path.join(__dirname, '..', 'server', 'build', 'libs', 'commandstack-1.0.1.jar')
+    : path.join(process.resourcesPath, 'server', 'commandstack-1.0.1.jar');
+
+  console.log('Starting Spring Boot server...');
+  console.log('JAR path:', jarPath);
+  console.log('Database path:', path.join(dbPath, 'commandstack'));
+
+  const javaArgs = [
+    '-jar',
+    jarPath,
+    `--spring.datasource.url=jdbc:h2:file:${path.join(dbPath, 'commandstack')};AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9092`,
+    '--spring.h2.console.enabled=false',
+    '--spring.jpa.hibernate.ddl-auto=update',
+    '--server.port=8080'
+  ];
+
+  serverProcess = spawn('java', javaArgs, {
+    env: { ...process.env }
+  });
+
+  serverProcess.stdout.on('data', (data) => {
+    console.log(`[SERVER] ${data.toString()}`);
+  });
+
+  serverProcess.stderr.on('data', (data) => {
+    console.error(`[SERVER ERROR] ${data.toString()}`);
+  });
+
+  serverProcess.on('close', (code) => {
+    console.log(`Server process exited with code ${code}`);
+    if (code !== 0 && !app.isQuitting) {
+      // 서버 크래시 시 알림
+      const { dialog } = require('electron');
+      dialog.showErrorBox(
+        'Server Error',
+        'Spring Boot server crashed. Please check logs and restart the application.'
+      );
+      app.quit();
+    }
+  });
+
+  // 서버 시작 대기
+  return new Promise((resolve) => {
+    const checkServer = setInterval(() => {
+      require('http').get('http://localhost:8080/actuator/health', (res) => {
+        if (res.statusCode === 200) {
+          clearInterval(checkServer);
+          console.log('Server is ready!');
+          resolve();
+        }
+      }).on('error', () => {
+        // 서버 아직 준비 안됨
+      });
+    }, 1000);
+
+    // 타임아웃 30초
+    setTimeout(() => {
+      clearInterval(checkServer);
+      resolve();
+    }, 30000);
+  });
+}
+
+// 메인 윈도우 생성
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1400,
+    height: 900,
+    minWidth: 1200,
+    minHeight: 700,
+    backgroundColor: '#1e1e1e',
+    titleBarStyle: 'hiddenInset',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      webSecurity: true
+    },
+    icon: path.join(__dirname, 'assets', 'icon.png')
+  });
+
+  // 개발 모드: Vite 개발 서버
+  // 프로덕션: 빌드된 정적 파일
+  if (isDev) {
+    mainWindow.loadURL('http://localhost:5173');
+  } else {
+    const indexPath = path.join(process.resourcesPath, 'client', 'dist', 'index.html');
+    mainWindow.loadFile(indexPath);
+  }
+
+  // 개발자 도구
+  if (isDev) {
+    mainWindow.webContents.openDevTools();
+  }
+
+  // 외부 링크는 기본 브라우저에서 열기
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
+
+// 메뉴 설정
+function createMenu() {
+  const template = [
+    {
+      label: 'CommandStack',
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        {
+          label: 'Check for Updates...',
+          click: () => {
+            autoUpdater.checkForUpdates();
+          }
+        },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        { type: 'separator' },
+        { role: 'front' }
+      ]
+    }
+  ];
+
+  if (isDev) {
+    template.push({
+      label: 'Developer',
+      submenu: [
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        {
+          label: 'Open User Data',
+          click: () => {
+            shell.openPath(userDataPath);
+          }
+        }
+      ]
+    });
+  }
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
+
+// 자동 업데이트 설정
+function setupAutoUpdater() {
+  if (isDev) return;
+
+  const updateConfigPath = path.join(process.resourcesPath, 'app-update.yml');
+  if (!fs.existsSync(updateConfigPath)) {
+    console.warn(`Auto update config missing: ${updateConfigPath}`);
+    return;
+  }
+
+  autoUpdater.checkForUpdatesAndNotify();
+
+  autoUpdater.on('update-available', () => {
+    console.log('Update available');
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    const { dialog } = require('electron');
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Update Ready',
+      message: 'A new version has been downloaded. Restart to apply updates?',
+      buttons: ['Restart', 'Later']
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+}
+
+// 앱 초기화
+app.whenReady().then(async () => {
+  console.log('App starting...');
+  console.log('Is Development:', isDev);
+
+  if (!isDev) {
+    await startServer();
+  }
+
+  createWindow();
+  createMenu();
+  setupAutoUpdater();
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+});
+
+// 앱 종료 시 서버 정리
+app.on('before-quit', () => {
+  app.isQuitting = true;
+  if (serverProcess) {
+    console.log('Stopping Spring Boot server...');
+    serverProcess.kill();
+  }
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+// 에러 핸들링
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (error) => {
+  console.error('Unhandled Rejection:', error);
+});

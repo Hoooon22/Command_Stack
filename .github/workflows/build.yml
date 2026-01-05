@@ -1,0 +1,78 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # v1.0.0 같은 태그 푸시 시 실행
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install dependencies
+        run: |
+          cd client && npm install
+          cd ../electron && npm install
+
+      - name: Build Client
+        run: cd client && npm run build
+
+      - name: Build Server
+        run: cd server && ./gradlew bootJar
+        shell: bash
+
+      - name: Build Electron (macOS)
+        if: matrix.os == 'macos-latest'
+        run: cd electron && npm run dist:mac
+
+      - name: Build Electron (Windows)
+        if: matrix.os == 'windows-latest'
+        run: cd electron && npm run dist:win
+
+      - name: Build Electron (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: cd electron && npm run dist -- --linux
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-dist
+          path: |
+            electron/dist/*.dmg
+            electron/dist/*.exe
+            electron/dist/*.AppImage
+            electron/dist/*.deb
+          retention-days: 7
+
+      # 릴리즈 생성 (태그 푸시 시만)
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            electron/dist/*.dmg
+            electron/dist/*.exe
+            electron/dist/*.AppImage
+            electron/dist/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

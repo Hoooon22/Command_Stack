@@ -181,19 +181,6 @@ export default function TimelineBoard({ commands, onCommandClick, onCreateComman
     };
   };
 
-  const getStatusColor = (status: Command['status']) => {
-    switch (status) {
-      case 'EXECUTING':
-        return 'bg-terminal-green';
-      case 'EXIT_SUCCESS':
-        return 'bg-terminal-border/50';
-      case 'SIGKILL':
-        return 'bg-terminal-red';
-      default:
-        return 'bg-terminal-text/60';
-    }
-  };
-
   const getTypeColor = (type: Command['type']) => {
     return type === 'SCHEDULE' ? 'bg-terminal-green' : 'bg-terminal-cyan';
   };

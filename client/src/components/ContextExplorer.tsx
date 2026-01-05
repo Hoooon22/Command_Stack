@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import type { Command, Context } from '../types';
 import Sidebar from './Sidebar';
 import StackItem from './StackItem';
@@ -8,6 +8,7 @@ interface ContextExplorerProps {
   contexts: Context[];
   commands: Command[];
   onAddCommand: (command: Omit<Command, 'id'>) => void;
+  onAddContext: (context: Omit<Context, 'id'>) => Promise<Context | null>;
   onCommandClick: (command: Command) => void;
 }
 
@@ -15,6 +16,7 @@ export default function ContextExplorer({
   contexts,
   commands,
   onAddCommand,
+  onAddContext,
   onCommandClick,
 }: ContextExplorerProps) {
   const [selectedContextId, setSelectedContextId] = useState<number | null>(
@@ -28,11 +30,19 @@ export default function ContextExplorer({
     type: 'TASK' as const,
   });
 
+  const handleCreateContext = async (context: Omit<Context, 'id'>) => {
+    const createdContext = await onAddContext(context);
+    if (createdContext) {
+      setSelectedContextId(createdContext.id);
+    }
+    return createdContext;
+  };
+
   const filteredCommands = selectedContextId
     ? commands.filter(cmd => cmd.contextId === selectedContextId)
     : commands;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!formData.syntax.trim() || !selectedContextId) return;
 
@@ -62,6 +72,7 @@ export default function ContextExplorer({
           contexts={contexts}
           selectedContextId={selectedContextId}
           onSelectContext={setSelectedContextId}
+          onCreateContext={handleCreateContext}
         />
       </aside>
 

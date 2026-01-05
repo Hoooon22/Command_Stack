@@ -57,6 +57,19 @@ function App() {
     }
   };
 
+  const handleAddContext = async (newContext: Omit<Context, 'id'>) => {
+    try {
+      const createdContext = await contextApi.create(newContext);
+      setContexts(prev => [createdContext, ...prev]);
+      console.log('[PUSH] New Context:', createdContext);
+      return createdContext;
+    } catch (err) {
+      console.error('Error creating context:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create context');
+      return null;
+    }
+  };
+
   const handleCommandClick = (command: Command) => {
     setSelectedCommand(command);
   };
@@ -187,6 +200,7 @@ function App() {
             contexts={contexts}
             commands={commands}
             onAddCommand={handleAddCommand}
+            onAddContext={handleAddContext}
             onCommandClick={handleCommandClick}
           />
         )}

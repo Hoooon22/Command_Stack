@@ -1,4 +1,5 @@
-import { useState, useEffect, KeyboardEvent } from 'react';
+import { useState, useEffect } from 'react';
+import type { KeyboardEvent } from 'react';
 import { X, Terminal } from 'lucide-react';
 import type { Command, Context } from '../types';
 
