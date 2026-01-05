@@ -57,7 +57,7 @@
       "entitlementsInherit": "assets/entitlements.mac.plist"
     },
     "win": {
-      "icon": "assets/icon.ico",
+      "icon": "assets/installer.ico",
       "target": [
         {
           "target": "nsis",
@@ -69,7 +69,9 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "installerIcon": "assets/installer.ico",
+      "uninstallerIcon": "assets/installer.ico"
     },
     "linux": {
       "icon": "assets/icon.png",
