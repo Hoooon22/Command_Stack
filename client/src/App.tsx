@@ -2,192 +2,105 @@ import { useState, useEffect } from 'react';
 import ViewSwitcher, { type ViewMode } from './components/ViewSwitcher';
 import ScheduleDashboard from './components/ScheduleDashboard';
 import ContextExplorer from './components/ContextExplorer';
-import CommandInput from './components/CommandInput';
+import ConsoleInput from './components/ConsoleInput';
 import CommandDetailModal from './components/CommandDetailModal';
 import CommandCreateForm from './components/CommandCreateForm';
 import type { Command, Context } from './types';
-
-// Mock Data: Contexts
-const MOCK_CONTEXTS: Context[] = [
-  { id: 1, namespace: 'Dev-Project', description: 'Active development commands' },
-  { id: 2, namespace: 'Life-Routine', description: 'Daily routines and habits' },
-  { id: 3, namespace: 'Ideas', description: 'Future ideas and experiments' },
-];
-
-// Mock Data: Commands with various dates/times
-const INITIAL_COMMANDS: Command[] = [
-  {
-    id: 1001,
-    syntax: 'Refactor authentication module',
-    details: 'Split auth flow into middleware, add refresh token handling, and update unit coverage.',
-    status: 'EXECUTING',
-    type: 'TASK',
-    contextId: 1,
-    deadline: '2026-01-05T14:00:00',
-    startedAt: '2026-01-04T09:00:00',
-  },
-  {
-    id: 1002,
-    syntax: 'Write unit tests for API endpoints',
-    details: 'Cover edge cases for rate limiting, payload validation, and error formatting.',
-    status: 'PENDING',
-    type: 'TASK',
-    contextId: 1,
-    deadline: '2026-01-06T10:30:00',
-  },
-  {
-    id: 1003,
-    syntax: 'Code review for pull request #42',
-    details: 'Focus on data migrations, backward compatibility, and rollback safety.',
-    status: 'PENDING',
-    type: 'TASK',
-    contextId: 1,
-    deadline: '2026-01-05T16:00:00',
-  },
-  {
-    id: 1004,
-    syntax: 'Deploy to staging environment',
-    details: 'Verify build artifacts, run smoke tests, and confirm environment variables.',
-    status: 'PENDING',
-    type: 'SCHEDULE',
-    contextId: 1,
-    deadline: '2026-01-07T09:00:00',
-  },
-  {
-    id: 1005,
-    syntax: 'Morning workout routine',
-    details: 'Strength training + 20 min cardio. Track heart rate and cooldown.',
-    status: 'EXIT_SUCCESS',
-    type: 'SCHEDULE',
-    contextId: 2,
-    deadline: '2026-01-04T07:00:00',
-    startedAt: '2026-01-04T06:20:00',
-    completedAt: '2026-01-04T06:55:00',
-  },
-  {
-    id: 1006,
-    syntax: 'Buy groceries',
-    details: 'Milk, eggs, protein, and fresh vegetables for the week.',
-    status: 'PENDING',
-    type: 'TASK',
-    contextId: 2,
-    deadline: '2026-01-05T18:00:00',
-  },
-  {
-    id: 1007,
-    syntax: 'Team meeting - Sprint planning',
-    details: 'Finalize scope, assign owners, and lock next sprint goals.',
-    status: 'PENDING',
-    type: 'SCHEDULE',
-    contextId: 1,
-    deadline: '2026-01-06T14:00:00',
-  },
-  {
-    id: 1008,
-    syntax: 'Explore Rust for system programming',
-    details: 'Prototype CLI parser and benchmark memory usage.',
-    status: 'PENDING',
-    type: 'TASK',
-    contextId: 3,
-    deadline: '2026-01-08T20:00:00',
-  },
-  {
-    id: 1009,
-    syntax: 'Read research paper on distributed systems',
-    details: 'Summarize consensus model and note open questions.',
-    status: 'PENDING',
-    type: 'TASK',
-    contextId: 3,
-    deadline: '2026-01-09T15:00:00',
-  },
-  {
-    id: 1010,
-    syntax: 'Evening meditation',
-    details: '10-minute breathing session, log focus level.',
-    status: 'PENDING',
-    type: 'SCHEDULE',
-    contextId: 2,
-    deadline: '2026-01-05T21:00:00',
-  },
-];
-
-const INITIAL_ACTIVE_COMMANDS = INITIAL_COMMANDS.filter(cmd => cmd.status !== 'EXIT_SUCCESS');
-const INITIAL_ARCHIVED_COMMANDS = INITIAL_COMMANDS.filter(cmd => cmd.status === 'EXIT_SUCCESS');
+import { commandApi, contextApi } from './api';
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('schedule');
-  const [commands, setCommands] = useState<Command[]>(INITIAL_ACTIVE_COMMANDS);
-  const [archivedCommands, setArchivedCommands] = useState<Command[]>(INITIAL_ARCHIVED_COMMANDS);
+  const [commands, setCommands] = useState<Command[]>([]);
+  const [archivedCommands, setArchivedCommands] = useState<Command[]>([]);
+  const [contexts, setContexts] = useState<Context[]>([]);
   const [isArchiveView, setIsArchiveView] = useState(false);
-  const [nextId, setNextId] = useState(1011);
   const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
   const [createFormDeadline, setCreateFormDeadline] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAddCommand = (newCommand: Omit<Command, 'id'>) => {
-    const command: Command = {
-      ...newCommand,
-      id: nextId,
-    };
-    setCommands(prev => [command, ...prev]);
-    setNextId(prev => prev + 1);
-    console.log('[PUSH] New Command:', command);
+  // Load initial data
+  useEffect(() => {
+    loadData();
+  }, [isArchiveView]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [contextsData, commandsData] = await Promise.all([
+        contextApi.getAll(),
+        isArchiveView ? commandApi.getArchived() : commandApi.getActive(),
+      ]);
+      setContexts(contextsData);
+      if (isArchiveView) {
+        setArchivedCommands(commandsData);
+      } else {
+        setCommands(commandsData);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load data');
+      console.error('Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleQuickPush = (syntax: string) => {
-    // Quick add without datetime - defaults to now + 1 hour
-    const deadline = new Date();
-    deadline.setHours(deadline.getHours() + 1);
-
-    handleAddCommand({
-      syntax,
-      details: 'Quick push entry. Add execution notes when ready.',
-      status: 'PENDING',
-      type: 'TASK',
-      contextId: MOCK_CONTEXTS[0].id,
-      deadline: deadline.toISOString(),
-    });
+  const handleAddCommand = async (newCommand: Omit<Command, 'id'>) => {
+    try {
+      const createdCommand = await commandApi.create(newCommand);
+      setCommands(prev => [createdCommand, ...prev]);
+      console.log('[PUSH] New Command:', createdCommand);
+    } catch (err) {
+      console.error('Error creating command:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create command');
+    }
   };
 
   const handleCommandClick = (command: Command) => {
     setSelectedCommand(command);
   };
 
-  const handleStatusChange = (id: number, status: Command['status']) => {
-    const now = new Date().toISOString();
-
-    setCommands(prev => {
-      const target = prev.find(cmd => cmd.id === id);
-      if (!target) return prev;
-
-      const updates: Partial<Command> = { status };
-
-      // Set startedAt when starting execution
-      if (status === 'EXECUTING' && !target.startedAt) {
-        updates.startedAt = now;
-      }
-
-      // Set completedAt when completing or killing
-      if ((status === 'EXIT_SUCCESS' || status === 'SIGKILL') && !target.completedAt) {
-        updates.completedAt = now;
-      }
-
-      const updated = { ...target, ...updates };
+  const handleStatusChange = async (id: number, status: Command['status']) => {
+    try {
+      const updatedCommand = await commandApi.updateStatus(id, status);
 
       if (status === 'EXIT_SUCCESS') {
-        setArchivedCommands(archive => [updated, ...archive]);
-        return prev.filter(cmd => cmd.id !== id);
+        // Move to archive
+        setCommands(prev => prev.filter(cmd => cmd.id !== id));
+        setArchivedCommands(prev => [updatedCommand, ...prev]);
+      } else {
+        // Update in active list
+        setCommands(prev =>
+          prev.map(cmd => (cmd.id === id ? updatedCommand : cmd))
+        );
       }
-
-      return prev.map(cmd => (cmd.id === id ? updated : cmd));
-    });
+    } catch (err) {
+      console.error('Error updating status:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update status');
+    }
   };
 
-  const handleDeleteCommand = (id: number) => {
-    handleStatusChange(id, 'SIGKILL');
+  const handleDeleteCommand = async (id: number) => {
+    try {
+      await commandApi.delete(id);
+      setCommands(prev => prev.filter(cmd => cmd.id !== id));
+    } catch (err) {
+      console.error('Error deleting command:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete command');
+    }
   };
 
   const handleCreateCommand = (deadline: string) => {
     setCreateFormDeadline(deadline);
+  };
+
+  const handleOpenCreateForm = () => {
+    // Set default deadline to tomorrow at noon
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(12, 0, 0, 0);
+    setCreateFormDeadline(tomorrow.toISOString());
   };
 
   // ESC key to close modal
@@ -204,6 +117,34 @@ function App() {
   useEffect(() => {
     setSelectedCommand(null);
   }, [isArchiveView]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-terminal-bg">
+        <div className="text-terminal-green font-mono">
+          <div className="text-lg mb-2">$ Loading...</div>
+          <div className="text-sm text-terminal-text/50">Fetching commands from server</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-terminal-bg">
+        <div className="text-red-500 font-mono text-center">
+          <div className="text-lg mb-2">⚠️ ERROR</div>
+          <div className="text-sm">{error}</div>
+          <button
+            onClick={loadData}
+            className="mt-4 px-4 py-2 bg-terminal-green text-terminal-bg rounded hover:bg-terminal-green/90"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-terminal-bg">
@@ -243,7 +184,7 @@ function App() {
           />
         ) : (
           <ContextExplorer
-            contexts={MOCK_CONTEXTS}
+            contexts={contexts}
             commands={commands}
             onAddCommand={handleAddCommand}
             onCommandClick={handleCommandClick}
@@ -251,16 +192,16 @@ function App() {
         )}
       </div>
 
-      {/* Bottom Command Input */}
+      {/* Bottom Console Input */}
       {!isArchiveView && (
-        <CommandInput onPushCommand={handleQuickPush} />
+        <ConsoleInput onOpenCreateForm={handleOpenCreateForm} />
       )}
 
       {/* Command Detail Modal */}
       {selectedCommand && (
         <CommandDetailModal
           command={selectedCommand}
-          context={MOCK_CONTEXTS.find(c => c.id === selectedCommand.contextId)}
+          context={contexts.find(c => c.id === selectedCommand.contextId)}
           onClose={() => setSelectedCommand(null)}
           onStatusChange={isArchiveView ? undefined : handleStatusChange}
           onDelete={isArchiveView ? undefined : handleDeleteCommand}
@@ -270,7 +211,7 @@ function App() {
       {/* Command Create Form */}
       {createFormDeadline && (
         <CommandCreateForm
-          contexts={MOCK_CONTEXTS}
+          contexts={contexts}
           prefilledDeadline={createFormDeadline}
           onSubmit={handleAddCommand}
           onClose={() => setCreateFormDeadline(null)}
