@@ -45,3 +45,8 @@ npm run dev
 cd ../server
 ./gradlew bootRun
 ```
+
+## Release Notes
+
+- macOS 전용 앱은 로컬에서 `build.sh`로 빌드하고 실행해야 합니다.
+- 나머지 플랫폼 설치 파일은 GitHub Releases에서 확인할 수 있습니다.
