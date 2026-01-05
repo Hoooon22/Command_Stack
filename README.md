@@ -48,5 +48,5 @@ cd ../server
 
 ## Release Notes
 
-- macOS 전용 앱은 로컬에서 `build.sh`로 빌드하고 실행해야 합니다.
-- 나머지 플랫폼 설치 파일은 GitHub Releases에서 확인할 수 있습니다.
+- The macOS app must be built and run locally with `build.sh`.
+- Installer files for other platforms are available in GitHub Releases.
