@@ -1,23 +1,23 @@
 import { X, Calendar, Clock, Terminal, CheckCircle2, XCircle, Play, ListChecks, CalendarClock } from 'lucide-react';
-import type { Command, Context } from '../types';
+import type { Task, Context } from '../types';
 
-interface CommandDetailModalProps {
-  command: Command;
+interface TaskDetailModalProps {
+  task: Task;
   context?: Context;
   onClose: () => void;
-  onStatusChange?: (id: number, status: Command['status']) => void;
+  onStatusChange?: (id: number, status: Task['status']) => void;
   onDelete?: (id: number) => void;
 }
 
-export default function CommandDetailModal({
-  command,
+export default function TaskDetailModal({
+  task,
   context,
   onClose,
   onStatusChange,
   onDelete,
-}: CommandDetailModalProps) {
+}: TaskDetailModalProps) {
   const getStatusIcon = () => {
-    switch (command.status) {
+    switch (task.status) {
       case 'EXECUTING':
         return <Play size={20} className="text-terminal-green animate-pulse" />;
       case 'EXIT_SUCCESS':
@@ -30,7 +30,7 @@ export default function CommandDetailModal({
   };
 
   const getStatusLabel = () => {
-    switch (command.status) {
+    switch (task.status) {
       case 'EXECUTING':
         return 'EXECUTING';
       case 'EXIT_SUCCESS':
@@ -43,13 +43,13 @@ export default function CommandDetailModal({
   };
 
   const getTypeColor = () => {
-    return command.type === 'SCHEDULE'
+    return task.type === 'SCHEDULE'
       ? 'text-terminal-green'
       : 'text-terminal-cyan';
   };
 
   const getTypeLabel = () => {
-    return command.type === 'SCHEDULE' ? 'Schedule' : 'Task';
+    return task.type === 'SCHEDULE' ? 'Schedule' : 'Task';
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -73,7 +73,7 @@ export default function CommandDetailModal({
                 Command Details
               </h2>
               <p className="text-xs text-terminal-text/50 font-mono mt-1">
-                PID: {command.id}
+                PID: {task.id}
               </p>
             </div>
           </div>
@@ -94,7 +94,7 @@ export default function CommandDetailModal({
             </label>
             <div className="bg-terminal-border/10 border border-terminal-border rounded p-4">
               <p className="text-terminal-text font-mono text-sm leading-relaxed">
-                {command.syntax}
+                {task.syntax}
               </p>
             </div>
           </div>
@@ -104,7 +104,7 @@ export default function CommandDetailModal({
             </label>
             <div className="bg-terminal-border/10 border border-terminal-border rounded p-4">
               <p className="text-terminal-text/80 font-mono text-sm leading-relaxed">
-                {command.details}
+                {task.details}
               </p>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default function CommandDetailModal({
                 TYPE
               </label>
               <div className="flex items-center gap-2 bg-terminal-border/10 border border-terminal-border rounded p-3">
-                {command.type === 'SCHEDULE' ? (
+                {task.type === 'SCHEDULE' ? (
                   <CalendarClock size={20} className={getTypeColor()} />
                 ) : (
                   <ListChecks size={20} className={getTypeColor()} />
@@ -158,7 +158,7 @@ export default function CommandDetailModal({
           )}
 
           {/* Deadline */}
-          {command.deadline && (
+          {task.deadline && (
             <div>
               <label className="block text-xs text-terminal-text/50 font-mono mb-2">
                 DEADLINE
@@ -167,7 +167,7 @@ export default function CommandDetailModal({
                 <Calendar size={20} className="text-terminal-text/50" />
                 <div className="flex-1">
                   <p className="text-terminal-text font-mono text-sm">
-                    {new Date(command.deadline).toLocaleString('en-US', {
+                    {new Date(task.deadline).toLocaleString('en-US', {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
@@ -179,7 +179,7 @@ export default function CommandDetailModal({
                   <p className="text-terminal-text/40 text-xs mt-1">
                     {(() => {
                       const now = new Date();
-                      const deadline = new Date(command.deadline);
+                      const deadline = new Date(task.deadline);
                       const diff = deadline.getTime() - now.getTime();
                       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -200,10 +200,10 @@ export default function CommandDetailModal({
               ACTIONS
             </label>
             <div className="flex gap-2">
-              {command.status === 'PENDING' && onStatusChange && command.type === 'SCHEDULE' && (
+              {task.status === 'PENDING' && onStatusChange && task.type === 'SCHEDULE' && (
                 <button
                   onClick={() => {
-                    onStatusChange(command.id, 'EXECUTING');
+                    onStatusChange(task.id, 'EXECUTING');
                     onClose();
                   }}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-terminal-green/20 text-terminal-green border border-terminal-green rounded hover:bg-terminal-green/30 transition-colors font-mono text-sm"
@@ -213,10 +213,10 @@ export default function CommandDetailModal({
                 </button>
               )}
 
-              {command.status === 'EXECUTING' && onStatusChange && (
+              {task.status === 'EXECUTING' && onStatusChange && (
                 <button
                   onClick={() => {
-                    onStatusChange(command.id, 'EXIT_SUCCESS');
+                    onStatusChange(task.id, 'EXIT_SUCCESS');
                     onClose();
                   }}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-terminal-green/20 text-terminal-green border border-terminal-green rounded hover:bg-terminal-green/30 transition-colors font-mono text-sm"
@@ -226,10 +226,10 @@ export default function CommandDetailModal({
                 </button>
               )}
 
-              {command.status === 'PENDING' && onStatusChange && command.type === 'TASK' && (
+              {task.status === 'PENDING' && onStatusChange && task.type === 'TASK' && (
                 <button
                   onClick={() => {
-                    onStatusChange(command.id, 'EXIT_SUCCESS');
+                    onStatusChange(task.id, 'EXIT_SUCCESS');
                     onClose();
                   }}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-terminal-green/20 text-terminal-green border border-terminal-green rounded hover:bg-terminal-green/30 transition-colors font-mono text-sm"
@@ -239,11 +239,11 @@ export default function CommandDetailModal({
                 </button>
               )}
 
-              {onDelete && command.status !== 'EXIT_SUCCESS' && (
+              {onDelete && task.status !== 'EXIT_SUCCESS' && (
                 <button
                   onClick={() => {
                     if (confirm('Are you sure you want to kill this command?')) {
-                      onDelete(command.id);
+                      onDelete(task.id);
                       onClose();
                     }
                   }}

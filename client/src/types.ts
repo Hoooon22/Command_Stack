@@ -1,12 +1,12 @@
-export type CommandStatus = 'PENDING' | 'EXECUTING' | 'EXIT_SUCCESS' | 'SIGKILL';
-export type CommandType = 'TASK' | 'SCHEDULE';
+export type TaskStatus = 'PENDING' | 'EXECUTING' | 'EXIT_SUCCESS' | 'SIGKILL';
+export type TaskType = 'TASK' | 'SCHEDULE';
 
-export interface Command {
+export interface Task {
   id: number;
   syntax: string;
   details: string;
-  status: CommandStatus;
-  type: CommandType;
+  status: TaskStatus;
+  type: TaskType;
   contextId: number;
   deadline?: string;
   startedAt?: string;
@@ -17,4 +17,5 @@ export interface Context {
   id: number;
   namespace: string;
   description: string;
+  color?: string;
 }

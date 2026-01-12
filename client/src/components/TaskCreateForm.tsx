@@ -1,24 +1,24 @@
 import { useState, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
 import { X, Terminal } from 'lucide-react';
-import type { Command, Context } from '../types';
+import type { Task, Context } from '../types';
 
-interface CommandCreateFormProps {
+interface TaskCreateFormProps {
   contexts: Context[];
   prefilledDeadline?: string;
-  onSubmit: (command: Omit<Command, 'id'>) => void;
+  onSubmit: (task: Omit<Task, 'id'>) => void;
   onClose: () => void;
 }
 
-export default function CommandCreateForm({
+export default function TaskCreateForm({
   contexts,
   prefilledDeadline,
   onSubmit,
   onClose,
-}: CommandCreateFormProps) {
+}: TaskCreateFormProps) {
   const [syntax, setSyntax] = useState('');
   const [details, setDetails] = useState('');
-  const [type, setType] = useState<Command['type']>('TASK');
+  const [type, setType] = useState<Task['type']>('TASK');
   const [contextId, setContextId] = useState(contexts[0]?.id || 1);
   const [deadlineDate, setDeadlineDate] = useState('');
   const [deadlineTime, setDeadlineTime] = useState('');

@@ -6,12 +6,12 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "commands")
+@Table(name = "tasks")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Command {
+public class Task {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,11 +25,11 @@ public class Command {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CommandStatus status;
+    private TaskStatus status;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CommandType type;
+    private TaskType type;
 
     @Column(nullable = false)
     private Long contextId;
@@ -50,7 +50,7 @@ public class Command {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         if (status == null) {
-            status = CommandStatus.PENDING;
+            status = TaskStatus.PENDING;
         }
     }
 
@@ -59,20 +59,20 @@ public class Command {
         updatedAt = LocalDateTime.now();
     }
 
-    public void updateStatus(CommandStatus newStatus) {
+    public void updateStatus(TaskStatus newStatus) {
         this.status = newStatus;
 
-        if (newStatus == CommandStatus.EXECUTING && this.startedAt == null) {
+        if (newStatus == TaskStatus.EXECUTING && this.startedAt == null) {
             this.startedAt = LocalDateTime.now();
         }
 
-        if ((newStatus == CommandStatus.EXIT_SUCCESS || newStatus == CommandStatus.SIGKILL)
+        if ((newStatus == TaskStatus.EXIT_SUCCESS || newStatus == TaskStatus.SIGKILL)
             && this.completedAt == null) {
             this.completedAt = LocalDateTime.now();
         }
     }
 
-    public void update(String syntax, String details, CommandType type, Long contextId, LocalDateTime deadline) {
+    public void update(String syntax, String details, TaskType type, Long contextId, LocalDateTime deadline) {
         this.syntax = syntax;
         this.details = details;
         this.type = type;
@@ -80,14 +80,14 @@ public class Command {
         this.deadline = deadline;
     }
 
-    public enum CommandStatus {
+    public enum TaskStatus {
         PENDING,
         EXECUTING,
         EXIT_SUCCESS,
         SIGKILL
     }
 
-    public enum CommandType {
+    public enum TaskType {
         TASK,
         SCHEDULE
     }

@@ -3,18 +3,18 @@ import ViewSwitcher, { type ViewMode } from './components/ViewSwitcher';
 import ScheduleDashboard from './components/ScheduleDashboard';
 import ContextExplorer from './components/ContextExplorer';
 import ConsoleInput from './components/ConsoleInput';
-import CommandDetailModal from './components/CommandDetailModal';
-import CommandCreateForm from './components/CommandCreateForm';
-import type { Command, Context } from './types';
-import { commandApi, contextApi } from './api';
+import TaskDetailModal from './components/TaskDetailModal';
+import TaskCreateForm from './components/TaskCreateForm';
+import type { Task, Context } from './types';
+import { taskApi, contextApi } from './api';
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('schedule');
-  const [commands, setCommands] = useState<Command[]>([]);
-  const [archivedCommands, setArchivedCommands] = useState<Command[]>([]);
+  const [commands, setCommands] = useState<Task[]>([]);
+  const [archivedCommands, setArchivedCommands] = useState<Task[]>([]);
   const [contexts, setContexts] = useState<Context[]>([]);
   const [isArchiveView, setIsArchiveView] = useState(false);
-  const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
+  const [selectedCommand, setSelectedCommand] = useState<Task | null>(null);
   const [createFormDeadline, setCreateFormDeadline] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ function App() {
       setError(null);
       const [contextsData, commandsData] = await Promise.all([
         contextApi.getAll(),
-        isArchiveView ? commandApi.getArchived() : commandApi.getActive(),
+        isArchiveView ? taskApi.getArchived() : taskApi.getActive(),
       ]);
       setContexts(contextsData);
       if (isArchiveView) {
@@ -46,13 +46,13 @@ function App() {
     }
   };
 
-  const handleAddCommand = async (newCommand: Omit<Command, 'id'>) => {
+  const handleAddCommand = async (newCommand: Omit<Task, 'id'>) => {
     try {
-      const createdCommand = await commandApi.create(newCommand);
+      const createdCommand = await taskApi.create(newCommand);
       setCommands(prev => [createdCommand, ...prev]);
       console.log('[PUSH] New Command:', createdCommand);
     } catch (err) {
-      console.error('Error creating command:', err);
+      console.error('Error creating task:', err);
       setError(err instanceof Error ? err.message : 'Failed to create command');
     }
   };
@@ -70,13 +70,13 @@ function App() {
     }
   };
 
-  const handleCommandClick = (command: Command) => {
-    setSelectedCommand(command);
+  const handleCommandClick = (task: Task) => {
+    setSelectedCommand(task);
   };
 
-  const handleStatusChange = async (id: number, status: Command['status']) => {
+  const handleStatusChange = async (id: number, status: Task['status']) => {
     try {
-      const updatedCommand = await commandApi.updateStatus(id, status);
+      const updatedCommand = await taskApi.updateStatus(id, status);
 
       if (status === 'EXIT_SUCCESS') {
         // Move to archive
@@ -96,10 +96,10 @@ function App() {
 
   const handleDeleteCommand = async (id: number) => {
     try {
-      await commandApi.delete(id);
+      await taskApi.delete(id);
       setCommands(prev => prev.filter(cmd => cmd.id !== id));
     } catch (err) {
-      console.error('Error deleting command:', err);
+      console.error('Error deleting task:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete command');
     }
   };
@@ -183,6 +183,7 @@ function App() {
         {isArchiveView ? (
           <ScheduleDashboard
             commands={archivedCommands}
+            contexts={contexts}
             onCommandClick={handleCommandClick}
             isArchiveView={isArchiveView}
             onToggleArchive={() => setIsArchiveView(false)}
@@ -190,6 +191,7 @@ function App() {
         ) : viewMode === 'schedule' ? (
           <ScheduleDashboard
             commands={commands}
+            contexts={contexts}
             onCommandClick={handleCommandClick}
             onCreateCommand={handleCreateCommand}
             isArchiveView={isArchiveView}
@@ -213,7 +215,7 @@ function App() {
 
       {/* Command Detail Modal */}
       {selectedCommand && (
-        <CommandDetailModal
+        <TaskDetailModal
           command={selectedCommand}
           context={contexts.find(c => c.id === selectedCommand.contextId)}
           onClose={() => setSelectedCommand(null)}
@@ -224,7 +226,7 @@ function App() {
 
       {/* Command Create Form */}
       {createFormDeadline && (
-        <CommandCreateForm
+        <TaskCreateForm
           contexts={contexts}
           prefilledDeadline={createFormDeadline}
           onSubmit={handleAddCommand}

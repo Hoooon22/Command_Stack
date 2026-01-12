@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import type { Command } from '../types';
+import type { Task, Context } from '../types';
 import CalendarBoard from './CalendarBoard';
 import TimelineBoard from './TimelineBoard';
 
 interface ScheduleDashboardProps {
-  commands: Command[];
-  onCommandClick?: (command: Command) => void;
+  commands: Task[];
+  contexts: Context[];
+  onCommandClick?: (task: Task) => void;
   onCreateCommand?: (deadline: string) => void;
   isArchiveView?: boolean;
   onToggleArchive?: () => void;
@@ -15,6 +16,7 @@ type ScheduleView = 'calendar' | 'timeline';
 
 export default function ScheduleDashboard({
   commands,
+  contexts,
   onCommandClick,
   onCreateCommand,
   isArchiveView = false,
@@ -68,6 +70,7 @@ export default function ScheduleDashboard({
         {scheduleView === 'calendar' ? (
           <CalendarBoard
             commands={commands}
+            contexts={contexts}
             onCommandClick={onCommandClick}
             onCreateCommand={onCreateCommand}
           />

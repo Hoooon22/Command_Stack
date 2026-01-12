@@ -1,6 +1,6 @@
 package com.devzip.commandstack.dto.request;
 
-import com.devzip.commandstack.domain.Command.CommandStatus;
+import com.devzip.commandstack.domain.Task.TaskStatus;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 public class StatusUpdateRequest {
 
     @NotNull(message = "Status is required")
-    private CommandStatus status;
+    private TaskStatus status;
 }

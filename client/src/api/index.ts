@@ -1,4 +1,4 @@
-import type { Command, Context } from '../types';
+import type { Task, Context } from '../types';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -38,25 +38,25 @@ export const contextApi = {
 };
 
 // Command API
-export const commandApi = {
-  getAll: () => apiCall<Command[]>('/commands'),
-  getActive: () => apiCall<Command[]>('/commands?filter=active'),
-  getArchived: () => apiCall<Command[]>('/commands?filter=archived'),
+export const taskApi = {
+  getAll: () => apiCall<Task[]>('/commands'),
+  getActive: () => apiCall<Task[]>('/commands?filter=active'),
+  getArchived: () => apiCall<Task[]>('/commands?filter=archived'),
   getByContext: (contextId: number) =>
-    apiCall<Command[]>(`/commands?contextId=${contextId}`),
-  getById: (id: number) => apiCall<Command>(`/commands/${id}`),
+    apiCall<Task[]>(`/commands?contextId=${contextId}`),
+  getById: (id: number) => apiCall<Task>(`/commands/${id}`),
   create: (data: Omit<Command, 'id'>) =>
-    apiCall<Command>('/commands', {
+    apiCall<Task>('/commands', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
   update: (id: number, data: Omit<Command, 'id'>) =>
-    apiCall<Command>(`/commands/${id}`, {
+    apiCall<Task>(`/commands/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
   updateStatus: (id: number, status: Command['status']) =>
-    apiCall<Command>(`/commands/${id}/status`, {
+    apiCall<Task>(`/commands/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),

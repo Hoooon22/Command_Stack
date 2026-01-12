@@ -23,6 +23,9 @@ public class Context {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(length = 7)
+    private String color;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
@@ -39,8 +42,9 @@ public class Context {
         updatedAt = LocalDateTime.now();
     }
 
-    public void update(String namespace, String description) {
+    public void update(String namespace, String description, String color) {
         this.namespace = namespace;
         this.description = description;
+        this.color = color;
     }
 }

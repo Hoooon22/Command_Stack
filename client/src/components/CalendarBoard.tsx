@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import type { Command } from '../types';
+import type { Task, Context } from '../types';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 interface CalendarBoardProps {
-  commands: Command[];
-  onCommandClick?: (command: Command) => void;
+  commands: Task[];
+  contexts: Context[];
+  onCommandClick?: (task: Task) => void;
   onCreateCommand?: (deadline: string) => void;
 }
 
-export default function CalendarBoard({ commands, onCommandClick, onCreateCommand }: CalendarBoardProps) {
+export default function CalendarBoard({ commands, contexts, onCommandClick, onCreateCommand }: CalendarBoardProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const barHeight = 18;
   const barGap = 4;
@@ -65,10 +66,9 @@ export default function CalendarBoard({ commands, onCommandClick, onCreateComman
     });
   };
 
-  const getTypeClass = (type: Command['type']) => {
-    return type === 'SCHEDULE'
-      ? 'bg-terminal-green/20 text-terminal-green hover:bg-terminal-green/30'
-      : 'bg-terminal-cyan/20 text-terminal-cyan hover:bg-terminal-cyan/30';
+  const getContextColor = (contextId: number) => {
+    const context = contexts.find(ctx => ctx.id === contextId);
+    return context?.color || '#50fa7b';
   };
 
   const getWeekSpans = (weekIdx: number) => {
@@ -236,19 +236,27 @@ export default function CalendarBoard({ commands, onCommandClick, onCreateComman
                             {day}
                           </div>
                           <div className="space-y-1 relative z-40">
-                            {dayCommands.map(cmd => (
-                              <div
-                                key={cmd.id}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onCommandClick?.(cmd);
-                                }}
-                                className={`text-xs truncate px-1 py-0.5 rounded cursor-pointer transition-colors ${getTypeClass(cmd.type)}`}
-                                title={cmd.syntax}
-                              >
-                                {cmd.syntax}
-                              </div>
-                            ))}
+                            {dayCommands.map(cmd => {
+                              const color = getContextColor(cmd.contextId);
+                              return (
+                                <div
+                                  key={cmd.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onCommandClick?.(cmd);
+                                  }}
+                                  className="text-xs truncate px-1 py-0.5 rounded cursor-pointer transition-colors"
+                                  style={{
+                                    backgroundColor: `${color}20`,
+                                    color: color,
+                                    borderColor: `${color}60`,
+                                  }}
+                                  title={cmd.syntax}
+                                >
+                                  {cmd.syntax}
+                                </div>
+                              );
+                            })}
                           </div>
                         </>
                       )}
@@ -265,38 +273,54 @@ export default function CalendarBoard({ commands, onCommandClick, onCreateComman
                     gridAutoRows: `${barHeight}px`,
                   }}
                 >
-                  {spans.map(span => (
-                    <button
-                      key={span.cmd.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCommandClick?.(span.cmd);
-                      }}
-                      className={`
-                        h-full bg-terminal-green/30 border border-terminal-green/60
-                        text-[11px] text-terminal-green font-mono px-2 flex items-center
-                        hover:bg-terminal-green/40 cursor-pointer transition-colors mx-0.5
-                        ${span.isSpanStart ? 'rounded-l' : ''}
-                        ${span.isSpanEnd ? 'rounded-r' : ''}
-                      `}
-                      style={{
-                        gridColumnStart: span.startCol + 1,
-                        gridColumnEnd: span.endCol + 2,
-                        gridRowStart: span.rowIndex + 1,
-                      }}
-                      title={span.cmd.syntax}
-                    >
-                      {!span.isSpanStart && (
-                        <span className="absolute left-0 top-0 bottom-0 w-3 bg-gradient-to-r from-terminal-green/60 to-transparent pointer-events-none" />
-                      )}
-                      {!span.isSpanEnd && (
-                        <span className="absolute right-0 top-0 bottom-0 w-3 bg-gradient-to-l from-terminal-green/60 to-transparent pointer-events-none" />
-                      )}
-                      <span className="relative z-10 truncate pointer-events-none">
-                        {span.cmd.syntax}
-                      </span>
-                    </button>
-                  ))}
+                  {spans.map(span => {
+                    const color = getContextColor(span.cmd.contextId);
+                    return (
+                      <button
+                        key={span.cmd.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCommandClick?.(span.cmd);
+                        }}
+                        className={`
+                          h-full border
+                          text-[11px] font-mono px-2 flex items-center
+                          cursor-pointer transition-colors mx-0.5
+                          ${span.isSpanStart ? 'rounded-l' : ''}
+                          ${span.isSpanEnd ? 'rounded-r' : ''}
+                        `}
+                        style={{
+                          backgroundColor: `${color}30`,
+                          borderColor: `${color}60`,
+                          color: color,
+                          gridColumnStart: span.startCol + 1,
+                          gridColumnEnd: span.endCol + 2,
+                          gridRowStart: span.rowIndex + 1,
+                        }}
+                        title={span.cmd.syntax}
+                      >
+                        {!span.isSpanStart && (
+                          <span
+                            className="absolute left-0 top-0 bottom-0 w-3 bg-gradient-to-r to-transparent pointer-events-none"
+                            style={{
+                              backgroundImage: `linear-gradient(to right, ${color}60, transparent)`
+                            }}
+                          />
+                        )}
+                        {!span.isSpanEnd && (
+                          <span
+                            className="absolute right-0 top-0 bottom-0 w-3 bg-gradient-to-l to-transparent pointer-events-none"
+                            style={{
+                              backgroundImage: `linear-gradient(to left, ${color}60, transparent)`
+                            }}
+                          />
+                        )}
+                        <span className="relative z-10 truncate pointer-events-none">
+                          {span.cmd.syntax}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import type { Command } from '../types';
+import type { Task } from '../types';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 interface TimelineBoardProps {
-  commands: Command[];
-  onCommandClick?: (command: Command) => void;
+  commands: Task[];
+  onCommandClick?: (task: Task) => void;
   onCreateCommand?: (deadline: string) => void;
 }
 
@@ -147,7 +147,7 @@ export default function TimelineBoard({ commands, onCommandClick, onCreateComman
   };
 
   // Calculate execution bar positions
-  const getExecutionBar = (cmd: Command) => {
+  const getExecutionBar = (cmd: Task) => {
     if (!cmd.startedAt) return null;
 
     const startPos = viewMode === 'week'
@@ -181,15 +181,15 @@ export default function TimelineBoard({ commands, onCommandClick, onCreateComman
     };
   };
 
-  const getTypeColor = (type: Command['type']) => {
+  const getTypeColor = (type: Task['type']) => {
     return type === 'SCHEDULE' ? 'bg-terminal-green' : 'bg-terminal-cyan';
   };
 
-  const getTypeLabel = (type: Command['type']) => {
+  const getTypeLabel = (type: Task['type']) => {
     return type === 'SCHEDULE' ? 'Schedule' : 'Task';
   };
 
-  const getTypeBadgeClass = (type: Command['type']) => {
+  const getTypeBadgeClass = (type: Task['type']) => {
     return type === 'SCHEDULE'
       ? 'bg-terminal-green/20 text-terminal-green'
       : 'bg-terminal-cyan/20 text-terminal-cyan';

@@ -134,7 +134,7 @@ export default function ConsoleInput({ onOpenCreateForm }: ConsoleInputProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder='type "create" to push new command...'
+          placeholder='type "create" to push new task...'
           className={`
             flex-1 bg-transparent font-mono text-sm outline-none
             ${error ? 'text-red-400' : 'text-terminal-text'}

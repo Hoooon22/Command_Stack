@@ -1,14 +1,14 @@
-import type { Command } from '../types';
+import type { Task } from '../types';
 import { CheckCircle2, XCircle, Play, Clock } from 'lucide-react';
 
 interface StackItemProps {
-  command: Command;
+  task: Task;
   onClick: () => void;
 }
 
-export default function StackItem({ command, onClick }: StackItemProps) {
+export default function StackItem({ task, onClick }: StackItemProps) {
   const getStatusStyle = () => {
-    switch (command.status) {
+    switch (task.status) {
       case 'EXECUTING':
         return 'border-terminal-green bg-terminal-green/5';
       case 'EXIT_SUCCESS':
@@ -21,7 +21,7 @@ export default function StackItem({ command, onClick }: StackItemProps) {
   };
 
   const getStatusIcon = () => {
-    switch (command.status) {
+    switch (task.status) {
       case 'EXECUTING':
         return <Play size={16} className="text-terminal-green animate-pulse" />;
       case 'EXIT_SUCCESS':
@@ -34,11 +34,11 @@ export default function StackItem({ command, onClick }: StackItemProps) {
   };
 
   const getTypeLabel = () => {
-    return command.type === 'SCHEDULE' ? 'Schedule' : 'Task';
+    return task.type === 'SCHEDULE' ? 'Schedule' : 'Task';
   };
 
   const getTypeClass = () => {
-    return command.type === 'SCHEDULE'
+    return task.type === 'SCHEDULE'
       ? 'bg-terminal-green/20 text-terminal-green'
       : 'bg-terminal-cyan/20 text-terminal-cyan';
   };
@@ -60,7 +60,7 @@ export default function StackItem({ command, onClick }: StackItemProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs text-terminal-text/50 font-mono">
-              PID:{command.id}
+              PID:{task.id}
             </span>
             <span className={`
               text-xs px-1.5 py-0.5 rounded font-mono
@@ -71,17 +71,17 @@ export default function StackItem({ command, onClick }: StackItemProps) {
           </div>
 
           <p className="text-sm text-terminal-text break-words">
-            {command.syntax}
+            {task.syntax}
           </p>
           <div className="absolute left-4 top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
             <div className="bg-terminal-bg border border-terminal-border px-2 py-1 rounded text-xs font-mono text-terminal-text max-w-[220px]">
-              {command.details}
+              {task.details}
             </div>
           </div>
 
-          {command.deadline && (
+          {task.deadline && (
             <div className="mt-2 text-xs text-terminal-text/40">
-              ⏱ {new Date(command.deadline).toLocaleString()}
+              ⏱ {new Date(task.deadline).toLocaleString()}
             </div>
           )}
         </div>

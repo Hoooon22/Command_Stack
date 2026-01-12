@@ -14,4 +14,6 @@ public class ContextCreateRequest {
     private String namespace;
 
     private String description;
+
+    private String color;
 }

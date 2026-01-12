@@ -1,15 +1,15 @@
 import { useState, type FormEvent } from 'react';
-import type { Command, Context } from '../types';
+import type { Task, Context } from '../types';
 import Sidebar from './Sidebar';
 import StackItem from './StackItem';
 import { Plus } from 'lucide-react';
 
 interface ContextExplorerProps {
   contexts: Context[];
-  commands: Command[];
-  onAddCommand: (command: Omit<Command, 'id'>) => void;
+  commands: Task[];
+  onAddCommand: (task: Omit<Task, 'id'>) => void;
   onAddContext: (context: Omit<Context, 'id'>) => Promise<Context | null>;
-  onCommandClick: (command: Command) => void;
+  onCommandClick: (task: Task) => void;
 }
 
 export default function ContextExplorer({
@@ -82,7 +82,12 @@ export default function ContextExplorer({
         <header className="border-b border-terminal-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-bold text-terminal-green font-mono">
+              <h1
+                className="text-lg font-bold font-mono"
+                style={{
+                  color: contexts.find(c => c.id === selectedContextId)?.color || '#50fa7b'
+                }}
+              >
                 {contexts.find(c => c.id === selectedContextId)?.namespace || 'All'}
               </h1>
               <p className="text-xs text-terminal-text/50 mt-1">

@@ -27,6 +27,7 @@ public class ContextService {
         Context context = Context.builder()
                 .namespace(request.getNamespace())
                 .description(request.getDescription())
+                .color(request.getColor())
                 .build();
 
         Context savedContext = contextRepository.save(context);
@@ -50,7 +51,7 @@ public class ContextService {
         Context context = contextRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Context not found with id: " + id));
 
-        context.update(request.getNamespace(), request.getDescription());
+        context.update(request.getNamespace(), request.getDescription(), request.getColor());
 
         return ContextResponse.from(context);
     }

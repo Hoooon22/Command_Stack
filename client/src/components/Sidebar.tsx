@@ -20,7 +20,20 @@ export default function Sidebar({
   const [formData, setFormData] = useState({
     namespace: '',
     description: '',
+    color: '#50fa7b',
   });
+
+  // Terminal-themed color palette
+  const colorPalette = [
+    '#50fa7b', // Green
+    '#8be9fd', // Cyan
+    '#ff79c6', // Pink
+    '#bd93f9', // Purple
+    '#ffb86c', // Orange
+    '#f1fa8c', // Yellow
+    '#ff5555', // Red
+    '#6272a4', // Blue
+  ];
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -32,9 +45,10 @@ export default function Sidebar({
       const created = await onCreateContext({
         namespace,
         description: formData.description.trim() || 'No description recorded yet.',
+        color: formData.color,
       });
       if (created) {
-        setFormData({ namespace: '', description: '' });
+        setFormData({ namespace: '', description: '', color: '#50fa7b' });
         setShowCreateForm(false);
       }
     } catch (error) {
@@ -87,6 +101,27 @@ export default function Sidebar({
               className="w-full px-2 py-1.5 bg-terminal-bg text-terminal-text border border-terminal-border rounded font-mono text-xs outline-none focus:border-terminal-green min-h-[60px] resize-y"
             />
           </div>
+          <div>
+            <label className="block text-[10px] text-terminal-text/60 mb-1 font-mono">
+              Color
+            </label>
+            <div className="flex gap-2 flex-wrap">
+              {colorPalette.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, color })}
+                  className={`w-6 h-6 rounded border-2 transition-all ${
+                    formData.color === color
+                      ? 'border-terminal-text scale-110'
+                      : 'border-terminal-border hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: color }}
+                  title={color}
+                />
+              ))}
+            </div>
+          </div>
           <div className="flex gap-2">
             <button
               type="submit"
@@ -119,14 +154,22 @@ export default function Sidebar({
                   w-full flex items-center gap-2 px-2 py-1.5 rounded
                   text-left text-sm transition-colors
                   ${isSelected
-                    ? 'bg-terminal-green/20 text-terminal-green'
+                    ? 'bg-opacity-20'
                     : 'text-terminal-text hover:bg-terminal-border/50'}
                 `}
+                style={
+                  isSelected && ctx.color
+                    ? {
+                        backgroundColor: `${ctx.color}20`,
+                        color: ctx.color,
+                      }
+                    : {}
+                }
               >
                 {isExpanded ? (
-                  <FolderOpen size={16} className="text-terminal-green" />
+                  <FolderOpen size={16} style={{ color: ctx.color || '#50fa7b' }} />
                 ) : (
-                  <Folder size={16} className="text-terminal-text" />
+                  <Folder size={16} style={{ color: ctx.color || '#6272a4' }} />
                 )}
                 <span className="truncate">{ctx.namespace}</span>
               </button>
