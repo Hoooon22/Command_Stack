@@ -37,29 +37,29 @@ export const contextApi = {
     apiCall<void>(`/contexts/${id}`, { method: 'DELETE' }),
 };
 
-// Command API
+// Task API
 export const taskApi = {
-  getAll: () => apiCall<Task[]>('/commands'),
-  getActive: () => apiCall<Task[]>('/commands?filter=active'),
-  getArchived: () => apiCall<Task[]>('/commands?filter=archived'),
+  getAll: () => apiCall<Task[]>('/tasks'),
+  getActive: () => apiCall<Task[]>('/tasks?filter=active'),
+  getArchived: () => apiCall<Task[]>('/tasks?filter=archived'),
   getByContext: (contextId: number) =>
-    apiCall<Task[]>(`/commands?contextId=${contextId}`),
-  getById: (id: number) => apiCall<Task>(`/commands/${id}`),
+    apiCall<Task[]>(`/tasks?contextId=${contextId}`),
+  getById: (id: number) => apiCall<Task>(`/tasks/${id}`),
   create: (data: Omit<Task, 'id'>) =>
-    apiCall<Task>('/commands', {
+    apiCall<Task>('/tasks', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
   update: (id: number, data: Omit<Task, 'id'>) =>
-    apiCall<Task>(`/commands/${id}`, {
+    apiCall<Task>(`/tasks/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
   updateStatus: (id: number, status: Task['status']) =>
-    apiCall<Task>(`/commands/${id}/status`, {
+    apiCall<Task>(`/tasks/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
   delete: (id: number) =>
-    apiCall<void>(`/commands/${id}`, { method: 'DELETE' }),
+    apiCall<void>(`/tasks/${id}`, { method: 'DELETE' }),
 };
