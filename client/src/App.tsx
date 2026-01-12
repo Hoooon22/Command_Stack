@@ -70,6 +70,19 @@ function App() {
     }
   };
 
+  const handleUpdateContext = async (id: number, updatedContext: Omit<Context, 'id'>) => {
+    try {
+      const updated = await contextApi.update(id, updatedContext);
+      setContexts(prev => prev.map(ctx => ctx.id === id ? updated : ctx));
+      console.log('[UPDATE] Context:', updated);
+      return updated;
+    } catch (err) {
+      console.error('Error updating context:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update context');
+      return null;
+    }
+  };
+
   const handleCommandClick = (task: Task) => {
     setSelectedCommand(task);
   };
@@ -203,6 +216,7 @@ function App() {
             commands={commands}
             onAddCommand={handleAddCommand}
             onAddContext={handleAddContext}
+            onUpdateContext={handleUpdateContext}
             onCommandClick={handleCommandClick}
           />
         )}

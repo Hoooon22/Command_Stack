@@ -23,12 +23,12 @@ async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
 export const contextApi = {
   getAll: () => apiCall<Context[]>('/contexts'),
   getById: (id: number) => apiCall<Context>(`/contexts/${id}`),
-  create: (data: { namespace: string; description: string }) =>
+  create: (data: { namespace: string; description: string; color?: string }) =>
     apiCall<Context>('/contexts', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  update: (id: number, data: { namespace: string; description: string }) =>
+  update: (id: number, data: { namespace: string; description: string; color?: string }) =>
     apiCall<Context>(`/contexts/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),

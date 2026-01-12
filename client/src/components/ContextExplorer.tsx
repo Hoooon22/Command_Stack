@@ -9,6 +9,7 @@ interface ContextExplorerProps {
   commands: Task[];
   onAddCommand: (task: Omit<Task, 'id'>) => void;
   onAddContext: (context: Omit<Context, 'id'>) => Promise<Context | null>;
+  onUpdateContext: (id: number, context: Omit<Context, 'id'>) => Promise<Context | null>;
   onCommandClick: (task: Task) => void;
 }
 
@@ -17,6 +18,7 @@ export default function ContextExplorer({
   commands,
   onAddCommand,
   onAddContext,
+  onUpdateContext,
   onCommandClick,
 }: ContextExplorerProps) {
   const [selectedContextId, setSelectedContextId] = useState<number | null>(
@@ -73,6 +75,7 @@ export default function ContextExplorer({
           selectedContextId={selectedContextId}
           onSelectContext={setSelectedContextId}
           onCreateContext={handleCreateContext}
+          onUpdateContext={onUpdateContext}
         />
       </aside>
 
