@@ -144,7 +144,7 @@ export default function TaskCreateForm({
               </label>
               <select
                 value={type}
-                onChange={(e) => setType(e.target.value as Command['type'])}
+                onChange={(e) => setType(e.target.value as Task['type'])}
                 className="w-full bg-terminal-bg border border-terminal-border rounded px-3 py-2
                            text-terminal-text font-mono text-sm outline-none
                            focus:border-terminal-green transition-colors cursor-pointer"

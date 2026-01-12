@@ -191,7 +191,7 @@ export default function ContextExplorer({
             filteredCommands.map(cmd => (
               <StackItem
                 key={cmd.id}
-                command={cmd}
+                task={cmd}
                 onClick={() => onCommandClick(cmd)}
               />
             ))

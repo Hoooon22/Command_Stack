@@ -63,7 +63,7 @@ public class TaskService {
     public TaskResponse getTaskById(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found with id:" + id));
-        return TaskResponse.from(command);
+        return TaskResponse.from(task);
     }
 
     @Transactional
@@ -71,7 +71,7 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found with id:" + id));
 
-        command.update(
+        task.update(
                 request.getSyntax(),
                 request.getDetails(),
                 request.getType(),
@@ -79,7 +79,7 @@ public class TaskService {
                 request.getDeadline()
         );
 
-        return TaskResponse.from(command);
+        return TaskResponse.from(task);
     }
 
     @Transactional
@@ -87,9 +87,9 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found with id:" + id));
 
-        command.updateStatus(request.getStatus());
+        task.updateStatus(request.getStatus());
 
-        return TaskResponse.from(command);
+        return TaskResponse.from(task);
     }
 
     @Transactional

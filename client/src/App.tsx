@@ -216,7 +216,7 @@ function App() {
       {/* Command Detail Modal */}
       {selectedCommand && (
         <TaskDetailModal
-          command={selectedCommand}
+          task={selectedCommand}
           context={contexts.find(c => c.id === selectedCommand.contextId)}
           onClose={() => setSelectedCommand(null)}
           onStatusChange={isArchiveView ? undefined : handleStatusChange}

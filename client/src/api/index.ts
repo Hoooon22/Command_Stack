@@ -45,17 +45,17 @@ export const taskApi = {
   getByContext: (contextId: number) =>
     apiCall<Task[]>(`/commands?contextId=${contextId}`),
   getById: (id: number) => apiCall<Task>(`/commands/${id}`),
-  create: (data: Omit<Command, 'id'>) =>
+  create: (data: Omit<Task, 'id'>) =>
     apiCall<Task>('/commands', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  update: (id: number, data: Omit<Command, 'id'>) =>
+  update: (id: number, data: Omit<Task, 'id'>) =>
     apiCall<Task>(`/commands/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-  updateStatus: (id: number, status: Command['status']) =>
+  updateStatus: (id: number, status: Task['status']) =>
     apiCall<Task>(`/commands/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
