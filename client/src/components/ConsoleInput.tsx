@@ -4,15 +4,16 @@ import { Terminal } from 'lucide-react';
 import type { Task } from '../types';
 
 // Available commands
-const AVAILABLE_COMMANDS = ['create', 'delete'];
+const AVAILABLE_COMMANDS = ['create', 'delete', 'edit'];
 
 interface ConsoleInputProps {
   onOpenCreateForm: () => void;
   tasks: Task[];
   onDeleteTask: (id: number) => void;
+  onEditTask: (task: Task) => void;
 }
 
-export default function ConsoleInput({ onOpenCreateForm, tasks, onDeleteTask }: ConsoleInputProps) {
+export default function ConsoleInput({ onOpenCreateForm, tasks, onDeleteTask, onEditTask }: ConsoleInputProps) {
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -35,12 +36,16 @@ export default function ConsoleInput({ onOpenCreateForm, tasks, onDeleteTask }: 
       return;
     }
 
-    // 2. Suggest tasks for 'delete' command
-    if (lowerInput.startsWith('delete ')) {
-      const query = trimmedInput.slice(7).toLowerCase(); // remove "delete "
+    // 2. Suggest tasks for 'delete' or 'edit' command
+    if (lowerInput.startsWith('delete ') || lowerInput.startsWith('edit ')) {
+      const [, ...queryParts] = lowerInput.split(' ');
+      const query = queryParts.join(' ');
+      // Preserve the original command prefix (delete or edit)
+      const prefix = lowerInput.startsWith('delete ') ? 'delete' : 'edit';
+      
       const matchingTasks = tasks
         .filter(t => t.syntax.toLowerCase().includes(query))
-        .map(t => `delete ${t.syntax}`);
+        .map(t => `${prefix} ${t.syntax}`);
       
       setSuggestions(matchingTasks);
       setSelectedIndex(matchingTasks.length > 0 ? 0 : -1);
@@ -111,8 +116,6 @@ export default function ConsoleInput({ onOpenCreateForm, tasks, onDeleteTask }: 
           return;
         }
 
-        // Find task by EXACT syntax match (case-insensitive for convenience, or case-sensitive?)
-        // Let's do exact match on syntax string
         const targetTask = tasks.find(t => t.syntax === argsStr);
 
         if (!targetTask) {
@@ -123,6 +126,30 @@ export default function ConsoleInput({ onOpenCreateForm, tasks, onDeleteTask }: 
 
         console.log('[COMMAND] Deleting task:', targetTask);
         onDeleteTask(targetTask.id);
+        setInput('');
+        setSuggestions([]);
+        setError('');
+        return;
+      }
+
+      // Execute 'edit'
+      if (commandName === 'edit') {
+        if (!argsStr) {
+          setError('Usage: edit <task_name>');
+          setTimeout(() => setError(''), 2000);
+          return;
+        }
+
+        const targetTask = tasks.find(t => t.syntax === argsStr);
+
+        if (!targetTask) {
+          setError(`Task not found: "${argsStr}"`);
+          setTimeout(() => setError(''), 2000);
+          return;
+        }
+
+        console.log('[COMMAND] Editing task:', targetTask);
+        onEditTask(targetTask);
         setInput('');
         setSuggestions([]);
         setError('');
@@ -187,7 +214,7 @@ export default function ConsoleInput({ onOpenCreateForm, tasks, onDeleteTask }: 
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder='type "create" or "delete <task>"...'
+          placeholder='type "create", "delete", or "edit"...'
           className={`
             flex-1 bg-transparent font-mono text-sm outline-none
             ${error ? 'text-red-400' : 'text-terminal-text'}

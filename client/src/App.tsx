@@ -11,13 +11,13 @@ import pkg from '../package.json';
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('schedule');
-// ... (omitted middle part for brevity, tool will handle it if I provide enough context)
   const [tasks, setTasks] = useState<Task[]>([]);
   const [archivedTasks, setArchivedTasks] = useState<Task[]>([]);
   const [contexts, setContexts] = useState<Context[]>([]);
   const [isArchiveView, setIsArchiveView] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [createFormDeadline, setCreateFormDeadline] = useState<string | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +56,19 @@ function App() {
     } catch (err) {
       console.error('Error creating task:', err);
       setError(err instanceof Error ? err.message : 'Failed to create task');
+    }
+  };
+
+  const handleUpdateTask = async (updatedData: Omit<Task, 'id'>) => {
+    if (!editingTask) return;
+    try {
+      const updatedTask = await taskApi.update(editingTask.id, updatedData);
+      setTasks(prev => prev.map(t => (t.id === editingTask.id ? updatedTask : t)));
+      console.log('[UPDATE] Task:', updatedTask);
+      setEditingTask(null);
+    } catch (err) {
+      console.error('Error updating task:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update task');
     }
   };
 
@@ -134,13 +147,14 @@ function App() {
   // ESC key to close modal
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && selectedTask) {
-        setSelectedTask(null);
+      if (e.key === 'Escape') {
+        if (selectedTask) setSelectedTask(null);
+        if (editingTask) setEditingTask(null);
       }
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [selectedTask]);
+  }, [selectedTask, editingTask]);
 
   useEffect(() => {
     setSelectedTask(null);
@@ -233,6 +247,7 @@ function App() {
           onOpenCreateForm={handleOpenCreateForm}
           tasks={tasks}
           onDeleteTask={handleDeleteTask}
+          onEditTask={setEditingTask}
         />
       )}
 
@@ -247,13 +262,17 @@ function App() {
         />
       )}
 
-      {/* Task Create Form */}
-      {createFormDeadline && (
+      {/* Task Create/Edit Form */}
+      {(createFormDeadline || editingTask) && (
         <TaskCreateForm
           contexts={contexts}
-          prefilledDeadline={createFormDeadline}
-          onSubmit={handleAddTask}
-          onClose={() => setCreateFormDeadline(null)}
+          prefilledDeadline={createFormDeadline || undefined}
+          initialData={editingTask || undefined}
+          onSubmit={editingTask ? handleUpdateTask : handleAddTask}
+          onClose={() => {
+            setCreateFormDeadline(null);
+            setEditingTask(null);
+          }}
         />
       )}
     </div>

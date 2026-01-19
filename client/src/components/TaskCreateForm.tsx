@@ -6,6 +6,7 @@ import type { Task, Context } from '../types';
 interface TaskCreateFormProps {
   contexts: Context[];
   prefilledDeadline?: string;
+  initialData?: Task;
   onSubmit: (task: Omit<Task, 'id'>) => void;
   onClose: () => void;
 }
@@ -13,6 +14,7 @@ interface TaskCreateFormProps {
 export default function TaskCreateForm({
   contexts,
   prefilledDeadline,
+  initialData,
   onSubmit,
   onClose,
 }: TaskCreateFormProps) {
@@ -23,9 +25,22 @@ export default function TaskCreateForm({
   const [deadlineDate, setDeadlineDate] = useState('');
   const [deadlineTime, setDeadlineTime] = useState('');
 
-  // Initialize deadline if prefilled
+  // Initialize form data
   useEffect(() => {
-    if (prefilledDeadline) {
+    if (initialData) {
+      setSyntax(initialData.syntax);
+      setDetails(initialData.details);
+      setType(initialData.type);
+      setContextId(initialData.contextId);
+      
+      if (initialData.deadline) {
+        const date = new Date(initialData.deadline);
+        const dateStr = date.toISOString().split('T')[0];
+        const timeStr = date.toTimeString().slice(0, 5);
+        setDeadlineDate(dateStr);
+        setDeadlineTime(timeStr);
+      }
+    } else if (prefilledDeadline) {
       const date = new Date(prefilledDeadline);
       const dateStr = date.toISOString().split('T')[0];
       const timeStr = date.toTimeString().slice(0, 5);
@@ -40,7 +55,7 @@ export default function TaskCreateForm({
       setDeadlineDate(dateStr);
       setDeadlineTime('12:00');
     }
-  }, [prefilledDeadline]);
+  }, [prefilledDeadline, initialData]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -54,7 +69,7 @@ export default function TaskCreateForm({
     onSubmit({
       syntax: syntax.trim(),
       details: details.trim() || 'No additional details provided.',
-      status: 'PENDING',
+      status: initialData ? initialData.status : 'PENDING',
       type,
       contextId,
       deadline,
@@ -87,7 +102,7 @@ export default function TaskCreateForm({
           <div className="flex items-center gap-2">
             <Terminal size={20} className="text-terminal-green" />
             <h2 className="text-lg font-mono text-terminal-green">
-              Push New Command
+              {initialData ? 'Edit Command' : 'Push New Command'}
             </h2>
           </div>
           <button
@@ -216,7 +231,7 @@ export default function TaskCreateForm({
                          hover:bg-terminal-green/90 transition-colors
                          disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Push (Ctrl+Enter)
+              {initialData ? 'Update (Ctrl+Enter)' : 'Push (Ctrl+Enter)'}
             </button>
           </div>
         </form>
