@@ -29,8 +29,8 @@ function startServer() {
   ensureDirectories();
 
   const jarPath = isDev
-    ? path.join(__dirname, '..', 'server', 'build', 'libs', 'commandstack-1.0.1.jar')
-    : path.join(process.resourcesPath, 'server', 'commandstack-1.0.1.jar');
+    ? path.join(__dirname, '..', 'server', 'build', 'libs', 'commandstack-1.0.3.jar')
+    : path.join(process.resourcesPath, 'server', 'commandstack-1.0.3.jar');
 
   console.log('Starting Spring Boot server...');
   console.log('JAR path:', jarPath);
@@ -42,7 +42,7 @@ function startServer() {
     `--spring.datasource.url=jdbc:h2:file:${path.join(dbPath, 'commandstack')};AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9092`,
     '--spring.h2.console.enabled=false',
     '--spring.jpa.hibernate.ddl-auto=update',
-    '--server.port=8080'
+    '--server.port=8090'
   ];
 
   serverProcess = spawn('java', javaArgs, {
@@ -73,7 +73,7 @@ function startServer() {
   // 서버 시작 대기
   return new Promise((resolve) => {
     const checkServer = setInterval(() => {
-      require('http').get('http://localhost:8080/actuator/health', (res) => {
+      require('http').get('http://localhost:8090/actuator/health', (res) => {
         if (res.statusCode === 200) {
           clearInterval(checkServer);
           console.log('Server is ready!');
