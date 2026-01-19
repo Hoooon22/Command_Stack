@@ -10,11 +10,11 @@ import { taskApi, contextApi } from './api';
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('schedule');
-  const [commands, setCommands] = useState<Task[]>([]);
-  const [archivedCommands, setArchivedCommands] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [archivedTasks, setArchivedTasks] = useState<Task[]>([]);
   const [contexts, setContexts] = useState<Context[]>([]);
   const [isArchiveView, setIsArchiveView] = useState(false);
-  const [selectedCommand, setSelectedCommand] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [createFormDeadline, setCreateFormDeadline] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,15 +28,15 @@ function App() {
     try {
       setLoading(true);
       setError(null);
-      const [contextsData, commandsData] = await Promise.all([
+      const [contextsData, tasksData] = await Promise.all([
         contextApi.getAll(),
         isArchiveView ? taskApi.getArchived() : taskApi.getActive(),
       ]);
       setContexts(contextsData);
       if (isArchiveView) {
-        setArchivedCommands(commandsData);
+        setArchivedTasks(tasksData);
       } else {
-        setCommands(commandsData);
+        setTasks(tasksData);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -46,14 +46,14 @@ function App() {
     }
   };
 
-  const handleAddCommand = async (newCommand: Omit<Task, 'id'>) => {
+  const handleAddTask = async (newTask: Omit<Task, 'id'>) => {
     try {
-      const createdCommand = await taskApi.create(newCommand);
-      setCommands(prev => [createdCommand, ...prev]);
-      console.log('[PUSH] New Command:', createdCommand);
+      const createdTask = await taskApi.create(newTask);
+      setTasks(prev => [createdTask, ...prev]);
+      console.log('[PUSH] New Task:', createdTask);
     } catch (err) {
       console.error('Error creating task:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create command');
+      setError(err instanceof Error ? err.message : 'Failed to create task');
     }
   };
 
@@ -83,22 +83,22 @@ function App() {
     }
   };
 
-  const handleCommandClick = (task: Task) => {
-    setSelectedCommand(task);
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
   };
 
   const handleStatusChange = async (id: number, status: Task['status']) => {
     try {
-      const updatedCommand = await taskApi.updateStatus(id, status);
+      const updatedTask = await taskApi.updateStatus(id, status);
 
       if (status === 'EXIT_SUCCESS') {
         // Move to archive
-        setCommands(prev => prev.filter(cmd => cmd.id !== id));
-        setArchivedCommands(prev => [updatedCommand, ...prev]);
+        setTasks(prev => prev.filter(t => t.id !== id));
+        setArchivedTasks(prev => [updatedTask, ...prev]);
       } else {
         // Update in active list
-        setCommands(prev =>
-          prev.map(cmd => (cmd.id === id ? updatedCommand : cmd))
+        setTasks(prev =>
+          prev.map(t => (t.id === id ? updatedTask : t))
         );
       }
     } catch (err) {
@@ -107,17 +107,17 @@ function App() {
     }
   };
 
-  const handleDeleteCommand = async (id: number) => {
+  const handleDeleteTask = async (id: number) => {
     try {
       await taskApi.delete(id);
-      setCommands(prev => prev.filter(cmd => cmd.id !== id));
+      setTasks(prev => prev.filter(t => t.id !== id));
     } catch (err) {
       console.error('Error deleting task:', err);
-      setError(err instanceof Error ? err.message : 'Failed to delete command');
+      setError(err instanceof Error ? err.message : 'Failed to delete task');
     }
   };
 
-  const handleCreateCommand = (deadline: string) => {
+  const handleCreateTask = (deadline: string) => {
     setCreateFormDeadline(deadline);
   };
 
@@ -132,16 +132,16 @@ function App() {
   // ESC key to close modal
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && selectedCommand) {
-        setSelectedCommand(null);
+      if (e.key === 'Escape' && selectedTask) {
+        setSelectedTask(null);
       }
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [selectedCommand]);
+  }, [selectedTask]);
 
   useEffect(() => {
-    setSelectedCommand(null);
+    setSelectedTask(null);
   }, [isArchiveView]);
 
   if (loading) {
@@ -181,8 +181,8 @@ function App() {
         </h1>
         <p className="text-xs text-terminal-text/50 mt-1">
           {isArchiveView
-            ? `${archivedCommands.length} archived commands`
-            : `${commands.length} total commands | ${commands.filter(c => c.status === 'EXECUTING').length} executing`}
+            ? `${archivedTasks.length} archived tasks`
+            : `${tasks.length} total tasks | ${tasks.filter(t => t.status === 'EXECUTING').length} executing`}
         </p>
       </header>
 
@@ -195,29 +195,29 @@ function App() {
       <div className="flex-1 overflow-hidden">
         {isArchiveView ? (
           <ScheduleDashboard
-            commands={archivedCommands}
+            tasks={archivedTasks}
             contexts={contexts}
-            onCommandClick={handleCommandClick}
+            onTaskClick={handleTaskClick}
             isArchiveView={isArchiveView}
             onToggleArchive={() => setIsArchiveView(false)}
           />
         ) : viewMode === 'schedule' ? (
           <ScheduleDashboard
-            commands={commands}
+            tasks={tasks}
             contexts={contexts}
-            onCommandClick={handleCommandClick}
-            onCreateCommand={handleCreateCommand}
+            onTaskClick={handleTaskClick}
+            onCreateTask={handleCreateTask}
             isArchiveView={isArchiveView}
             onToggleArchive={() => setIsArchiveView(true)}
           />
         ) : (
           <ContextExplorer
             contexts={contexts}
-            commands={commands}
-            onAddCommand={handleAddCommand}
+            tasks={tasks}
+            onAddTask={handleAddTask}
             onAddContext={handleAddContext}
             onUpdateContext={handleUpdateContext}
-            onCommandClick={handleCommandClick}
+            onTaskClick={handleTaskClick}
           />
         )}
       </div>
@@ -227,23 +227,23 @@ function App() {
         <ConsoleInput onOpenCreateForm={handleOpenCreateForm} />
       )}
 
-      {/* Command Detail Modal */}
-      {selectedCommand && (
+      {/* Task Detail Modal */}
+      {selectedTask && (
         <TaskDetailModal
-          task={selectedCommand}
-          context={contexts.find(c => c.id === selectedCommand.contextId)}
-          onClose={() => setSelectedCommand(null)}
+          task={selectedTask}
+          context={contexts.find(c => c.id === selectedTask.contextId)}
+          onClose={() => setSelectedTask(null)}
           onStatusChange={isArchiveView ? undefined : handleStatusChange}
-          onDelete={isArchiveView ? undefined : handleDeleteCommand}
+          onDelete={isArchiveView ? undefined : handleDeleteTask}
         />
       )}
 
-      {/* Command Create Form */}
+      {/* Task Create Form */}
       {createFormDeadline && (
         <TaskCreateForm
           contexts={contexts}
           prefilledDeadline={createFormDeadline}
-          onSubmit={handleAddCommand}
+          onSubmit={handleAddTask}
           onClose={() => setCreateFormDeadline(null)}
         />
       )}

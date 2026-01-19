@@ -4,10 +4,10 @@ import CalendarBoard from './CalendarBoard';
 import TimelineBoard from './TimelineBoard';
 
 interface ScheduleDashboardProps {
-  commands: Task[];
+  tasks: Task[];
   contexts: Context[];
-  onCommandClick?: (task: Task) => void;
-  onCreateCommand?: (deadline: string) => void;
+  onTaskClick?: (task: Task) => void;
+  onCreateTask?: (deadline: string) => void;
   isArchiveView?: boolean;
   onToggleArchive?: () => void;
 }
@@ -15,10 +15,10 @@ interface ScheduleDashboardProps {
 type ScheduleView = 'calendar' | 'timeline';
 
 export default function ScheduleDashboard({
-  commands,
+  tasks,
   contexts,
-  onCommandClick,
-  onCreateCommand,
+  onTaskClick,
+  onCreateTask,
   isArchiveView = false,
   onToggleArchive,
 }: ScheduleDashboardProps) {
@@ -61,7 +61,7 @@ export default function ScheduleDashboard({
               : 'bg-terminal-border/10 text-terminal-text/60 border-terminal-border hover:text-terminal-text hover:bg-terminal-border/30'}
           `}
         >
-          {isArchiveView ? 'Active Commands' : 'Archived Commands'}
+          {isArchiveView ? 'Active Tasks' : 'Archived Tasks'}
         </button>
       </div>
 
@@ -69,16 +69,16 @@ export default function ScheduleDashboard({
       <div className="flex-1 overflow-hidden">
         {scheduleView === 'calendar' ? (
           <CalendarBoard
-            commands={commands}
+            tasks={tasks}
             contexts={contexts}
-            onCommandClick={onCommandClick}
-            onCreateCommand={onCreateCommand}
+            onTaskClick={onTaskClick}
+            onCreateTask={onCreateTask}
           />
         ) : (
           <TimelineBoard
-            commands={commands}
-            onCommandClick={onCommandClick}
-            onCreateCommand={onCreateCommand}
+            tasks={tasks}
+            onTaskClick={onTaskClick}
+            onCreateTask={onCreateTask}
           />
         )}
       </div>

@@ -3,19 +3,19 @@ import type { Task } from '../types';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 interface TimelineBoardProps {
-  commands: Task[];
-  onCommandClick?: (task: Task) => void;
-  onCreateCommand?: (deadline: string) => void;
+  tasks: Task[];
+  onTaskClick?: (task: Task) => void;
+  onCreateTask?: (deadline: string) => void;
 }
 
 type TimelineView = 'week' | 'month' | 'year';
 
-export default function TimelineBoard({ commands, onCommandClick, onCreateCommand }: TimelineBoardProps) {
+export default function TimelineBoard({ tasks, onTaskClick, onCreateTask }: TimelineBoardProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<TimelineView>('month');
 
-  // Get commands with deadlines
-  const scheduledCommands = commands.filter(cmd => cmd.deadline);
+  // Get tasks with deadlines
+  const scheduledTasks = tasks.filter(task => task.deadline);
 
   // Navigation functions
   const goPrevious = () => {
@@ -224,12 +224,12 @@ export default function TimelineBoard({ commands, onCommandClick, onCreateComman
         </div>
 
         <div className="flex gap-2">
-          {onCreateCommand && (
+          {onCreateTask && (
             <button
               onClick={() => {
                 const now = new Date();
                 now.setHours(12, 0, 0, 0);
-                onCreateCommand(now.toISOString());
+                onCreateTask(now.toISOString());
               }}
               className="flex items-center gap-1 px-3 py-1 bg-terminal-green/20 hover:bg-terminal-green/30
                          rounded text-terminal-green font-mono text-xs transition-colors"
@@ -274,45 +274,45 @@ export default function TimelineBoard({ commands, onCommandClick, onCreateComman
             </div>
           </div>
 
-          {/* Command Rows */}
+          {/* Task Rows */}
           <div className="space-y-4">
-            {scheduledCommands.length === 0 ? (
+            {scheduledTasks.length === 0 ? (
               <div className="text-center text-terminal-text/30 py-20">
-                <p className="font-mono text-sm">No scheduled commands for this period</p>
+                <p className="font-mono text-sm">No scheduled tasks for this period</p>
               </div>
             ) : (
-              scheduledCommands.map(cmd => {
-                const executionBar = getExecutionBar(cmd);
-                const deadlinePos = cmd.deadline ? getTimePosition(cmd.deadline) : null;
+              scheduledTasks.map(task => {
+                const executionBar = getExecutionBar(task);
+                const deadlinePos = task.deadline ? getTimePosition(task.deadline) : null;
 
                 // Skip if neither execution bar nor deadline is visible
                 if (!executionBar && deadlinePos === null) return null;
 
                 return (
                   <div
-                    key={cmd.id}
+                    key={task.id}
                     className="flex items-center group cursor-pointer"
-                    onClick={() => onCommandClick?.(cmd)}
+                    onClick={() => onTaskClick?.(task)}
                   >
-                    {/* Command Name */}
+                    {/* Task Name */}
                     <div className="w-48 flex-shrink-0 pr-4 relative">
                       <div className="text-sm text-terminal-text font-mono truncate group-hover:text-terminal-green transition-colors">
-                        {cmd.syntax}
+                        {task.syntax}
                       </div>
                       <div className="absolute left-0 top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
                         <div className="bg-terminal-bg border border-terminal-border px-2 py-1 rounded text-xs font-mono text-terminal-text max-w-[220px]">
-                          {cmd.details}
+                          {task.details}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-terminal-text/40 font-mono">
-                          PID:{cmd.id}
+                          PID:{task.id}
                         </span>
                         <span className={`
                           text-xs px-1 py-0.5 rounded font-mono
-                          ${getTypeBadgeClass(cmd.type)}
+                          ${getTypeBadgeClass(task.type)}
                         `}>
-                          {getTypeLabel(cmd.type)}
+                          {getTypeLabel(task.type)}
                         </span>
                       </div>
                     </div>
@@ -349,22 +349,22 @@ export default function TimelineBoard({ commands, onCommandClick, onCreateComman
                           {/* Tooltip on hover */}
                           <div className="absolute top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                             <div className="bg-terminal-bg border border-terminal-green px-2 py-1 rounded text-xs font-mono text-terminal-green whitespace-nowrap">
-                              {cmd.startedAt && new Date(cmd.startedAt).toLocaleDateString('en-US', {
+                              {task.startedAt && new Date(task.startedAt).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}
                               {' → '}
-                              {cmd.completedAt
-                                ? new Date(cmd.completedAt).toLocaleDateString('en-US', {
+                              {task.completedAt
+                                ? new Date(task.completedAt).toLocaleDateString('en-US', {
                                     month: 'short',
                                     day: 'numeric',
                                     hour: '2-digit',
                                     minute: '2-digit',
                                   })
-                                : cmd.deadline
-                                ? new Date(cmd.deadline).toLocaleDateString('en-US', {
+                                : task.deadline
+                                ? new Date(task.deadline).toLocaleDateString('en-US', {
                                     month: 'short',
                                     day: 'numeric',
                                     hour: '2-digit',
@@ -385,7 +385,7 @@ export default function TimelineBoard({ commands, onCommandClick, onCreateComman
                           <div className={`
                             w-6 h-6 rounded-full border-2 border-terminal-bg
                             flex items-center justify-center
-                            ${getTypeColor(cmd.type)}
+                            ${getTypeColor(task.type)}
                             shadow-lg
                           `}>
                             <div className="w-2 h-2 bg-terminal-bg rounded-full" />
@@ -394,7 +394,7 @@ export default function TimelineBoard({ commands, onCommandClick, onCreateComman
                           {/* Tooltip on hover */}
                           <div className="absolute top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                             <div className="bg-terminal-bg border border-terminal-green px-2 py-1 rounded text-xs font-mono text-terminal-green whitespace-nowrap">
-                              {new Date(cmd.deadline!).toLocaleDateString('en-US', {
+                              {new Date(task.deadline!).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 hour: '2-digit',
@@ -408,13 +408,13 @@ export default function TimelineBoard({ commands, onCommandClick, onCreateComman
 
                     {/* Date */}
                     <div className="w-32 flex-shrink-0 pl-4 text-xs text-terminal-text/50 font-mono">
-                      {cmd.startedAt
-                        ? `${new Date(cmd.startedAt).toLocaleDateString('en-US', {
+                      {task.startedAt
+                        ? `${new Date(task.startedAt).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             ...(viewMode === 'week' && { hour: '2-digit', minute: '2-digit' })
                           })}`
-                        : cmd.deadline && new Date(cmd.deadline).toLocaleDateString('en-US', {
+                        : task.deadline && new Date(task.deadline).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             ...(viewMode === 'week' && { hour: '2-digit', minute: '2-digit' })

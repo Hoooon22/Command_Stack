@@ -3,13 +3,13 @@ import type { Task, Context } from '../types';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 interface CalendarBoardProps {
-  commands: Task[];
+  tasks: Task[];
   contexts: Context[];
-  onCommandClick?: (task: Task) => void;
-  onCreateCommand?: (deadline: string) => void;
+  onTaskClick?: (task: Task) => void;
+  onCreateTask?: (deadline: string) => void;
 }
 
-export default function CalendarBoard({ commands, contexts, onCommandClick, onCreateCommand }: CalendarBoardProps) {
+export default function CalendarBoard({ tasks, contexts, onTaskClick, onCreateTask }: CalendarBoardProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const barHeight = 18;
   const barGap = 4;
@@ -55,13 +55,13 @@ export default function CalendarBoard({ commands, contexts, onCommandClick, onCr
     calendarDays.slice(weekIdx * 7, weekIdx * 7 + 7)
   );
 
-  const getCommandsForDay = (day: number | null) => {
+  const getTasksForDay = (day: number | null) => {
     if (!day) return [];
     const targetDate = new Date(year, month, day);
-    return commands.filter(cmd => {
-      if (!cmd.deadline) return false;
-      if (cmd.type === 'SCHEDULE' && cmd.startedAt) return false;
-      const deadlineDate = new Date(cmd.deadline);
+    return tasks.filter(task => {
+      if (!task.deadline) return false;
+      if (task.type === 'SCHEDULE' && task.startedAt) return false;
+      const deadlineDate = new Date(task.deadline);
       return isSameDay(deadlineDate, targetDate);
     });
   };
@@ -77,28 +77,28 @@ export default function CalendarBoard({ commands, contexts, onCommandClick, onCr
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
 
-    const spans = commands
-      .filter(cmd => cmd.type === 'SCHEDULE' && cmd.startedAt && cmd.deadline)
-      .map(cmd => {
-        const startDate = new Date(cmd.startedAt!);
-        const endDate = new Date(cmd.deadline!);
+    const spans = tasks
+      .filter(task => task.type === 'SCHEDULE' && task.startedAt && task.deadline)
+      .map(task => {
+        const startDate = new Date(task.startedAt!);
+        const endDate = new Date(task.deadline!);
         const spanStart = startDate <= endDate ? startDate : endDate;
         const spanEnd = startDate <= endDate ? endDate : startDate;
-        return { cmd, spanStart, spanEnd };
+        return { task, spanStart, spanEnd };
       })
       .filter(({ spanStart, spanEnd }) =>
         isWithinRangeDay(weekStart, spanStart, spanEnd) ||
         isWithinRangeDay(weekEnd, spanStart, spanEnd) ||
         isWithinRangeDay(spanStart, weekStart, weekEnd)
       )
-      .map(({ cmd, spanStart, spanEnd }) => {
+      .map(({ task, spanStart, spanEnd }) => {
         const start = spanStart < weekStart ? weekStart : spanStart;
         const end = spanEnd > weekEnd ? weekEnd : spanEnd;
         const startCol = Math.max(0, Math.round((normalizeDay(start).getTime() - normalizeDay(weekStart).getTime()) / (1000 * 60 * 60 * 24)));
         const endCol = Math.max(0, Math.round((normalizeDay(end).getTime() - normalizeDay(weekStart).getTime()) / (1000 * 60 * 60 * 24)));
         const durationDays = Math.round((normalizeDay(spanEnd).getTime() - normalizeDay(spanStart).getTime()) / (1000 * 60 * 60 * 24)) + 1;
         return {
-          cmd,
+          task,
           startCol,
           endCol,
           isSpanStart: isSameDay(start, spanStart),
@@ -152,12 +152,12 @@ export default function CalendarBoard({ commands, contexts, onCommandClick, onCr
           {monthNames[month]} {year}
         </h2>
         <div className="flex gap-2">
-          {onCreateCommand && (
+          {onCreateTask && (
             <button
               onClick={() => {
                 const now = new Date();
                 now.setHours(12, 0, 0, 0);
-                onCreateCommand(now.toISOString());
+                onCreateTask(now.toISOString());
               }}
               className="flex items-center gap-1 px-3 py-1 bg-terminal-green/20 hover:bg-terminal-green/30
                          rounded text-terminal-green font-mono text-xs transition-colors"
@@ -204,7 +204,7 @@ export default function CalendarBoard({ commands, contexts, onCommandClick, onCr
             <div key={weekIdx} className="relative overflow-visible" style={{ position: 'relative', zIndex: 1 }}>
               <div className="grid grid-cols-7 relative overflow-visible z-20">
                 {week.map((day, dayIdx) => {
-                  const dayCommands = getCommandsForDay(day);
+                  const dayTasks = getTasksForDay(day);
                   const isToday =
                     day !== null &&
                     new Date().getDate() === day &&
@@ -221,9 +221,9 @@ export default function CalendarBoard({ commands, contexts, onCommandClick, onCr
                       `}
                       style={{ paddingTop: `${cellTopPadding}px` }}
                       onClick={() => {
-                        if (day && onCreateCommand) {
+                        if (day && onCreateTask) {
                           const deadline = new Date(year, month, day, 12, 0, 0);
-                          onCreateCommand(deadline.toISOString());
+                          onCreateTask(deadline.toISOString());
                         }
                       }}
                     >
@@ -236,14 +236,14 @@ export default function CalendarBoard({ commands, contexts, onCommandClick, onCr
                             {day}
                           </div>
                           <div className="space-y-1 relative z-40">
-                            {dayCommands.map(cmd => {
-                              const color = getContextColor(cmd.contextId);
+                            {dayTasks.map(task => {
+                              const color = getContextColor(task.contextId);
                               return (
                                 <div
-                                  key={cmd.id}
+                                  key={task.id}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    onCommandClick?.(cmd);
+                                    onTaskClick?.(task);
                                   }}
                                   className="text-xs truncate px-1 py-0.5 rounded cursor-pointer transition-colors"
                                   style={{
@@ -251,9 +251,9 @@ export default function CalendarBoard({ commands, contexts, onCommandClick, onCr
                                     color: color,
                                     borderColor: `${color}60`,
                                   }}
-                                  title={cmd.syntax}
+                                  title={task.syntax}
                                 >
-                                  {cmd.syntax}
+                                  {task.syntax}
                                 </div>
                               );
                             })}
@@ -274,13 +274,13 @@ export default function CalendarBoard({ commands, contexts, onCommandClick, onCr
                   }}
                 >
                   {spans.map(span => {
-                    const color = getContextColor(span.cmd.contextId);
+                    const color = getContextColor(span.task.contextId);
                     return (
                       <button
-                        key={span.cmd.id}
+                        key={span.task.id}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onCommandClick?.(span.cmd);
+                          onTaskClick?.(span.task);
                         }}
                         className={`
                           h-full border
@@ -297,7 +297,7 @@ export default function CalendarBoard({ commands, contexts, onCommandClick, onCr
                           gridColumnEnd: span.endCol + 2,
                           gridRowStart: span.rowIndex + 1,
                         }}
-                        title={span.cmd.syntax}
+                        title={span.task.syntax}
                       >
                         {!span.isSpanStart && (
                           <span
@@ -316,7 +316,7 @@ export default function CalendarBoard({ commands, contexts, onCommandClick, onCr
                           />
                         )}
                         <span className="relative z-10 truncate pointer-events-none">
-                          {span.cmd.syntax}
+                          {span.task.syntax}
                         </span>
                       </button>
                     );
