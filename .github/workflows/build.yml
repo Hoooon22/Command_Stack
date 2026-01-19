@@ -47,14 +47,20 @@ jobs:
       - name: Build Electron (macOS)
         if: matrix.os == 'macos-latest'
         run: cd electron && npm run dist:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Electron (Windows)
         if: matrix.os == 'windows-latest'
         run: cd electron && npm run dist:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Electron (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: cd electron && npm run dist -- --linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

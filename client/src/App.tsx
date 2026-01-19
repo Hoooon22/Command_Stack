@@ -7,9 +7,11 @@ import TaskDetailModal from './components/TaskDetailModal';
 import TaskCreateForm from './components/TaskCreateForm';
 import type { Task, Context } from './types';
 import { taskApi, contextApi } from './api';
+import pkg from '../package.json';
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('schedule');
+// ... (omitted middle part for brevity, tool will handle it if I provide enough context)
   const [tasks, setTasks] = useState<Task[]>([]);
   const [archivedTasks, setArchivedTasks] = useState<Task[]>([]);
   const [contexts, setContexts] = useState<Context[]>([]);
@@ -176,9 +178,12 @@ function App() {
     <div className="flex flex-col h-screen bg-terminal-bg">
       {/* Header */}
       <header className="border-b border-terminal-border px-6 py-4">
-        <h1 className="text-xl font-bold text-terminal-green font-mono">
-          $ COMMAND_STACK
-        </h1>
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-xl font-bold text-terminal-green font-mono">
+            $ COMMAND_STACK
+          </h1>
+          <span className="text-[10px] text-terminal-text/30 font-mono">v{pkg.version}</span>
+        </div>
         <p className="text-xs text-terminal-text/50 mt-1">
           {isArchiveView
             ? `${archivedTasks.length} archived tasks`
@@ -224,7 +229,11 @@ function App() {
 
       {/* Bottom Console Input */}
       {!isArchiveView && (
-        <ConsoleInput onOpenCreateForm={handleOpenCreateForm} />
+        <ConsoleInput
+          onOpenCreateForm={handleOpenCreateForm}
+          tasks={tasks}
+          onDeleteTask={handleDeleteTask}
+        />
       )}
 
       {/* Task Detail Modal */}

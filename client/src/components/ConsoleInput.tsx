@@ -1,15 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
 import { Terminal } from 'lucide-react';
+import type { Task } from '../types';
 
 // Available commands
-const AVAILABLE_COMMANDS = ['create'];
+const AVAILABLE_COMMANDS = ['create', 'delete'];
 
 interface ConsoleInputProps {
   onOpenCreateForm: () => void;
+  tasks: Task[];
+  onDeleteTask: (id: number) => void;
 }
 
-export default function ConsoleInput({ onOpenCreateForm }: ConsoleInputProps) {
+export default function ConsoleInput({ onOpenCreateForm, tasks, onDeleteTask }: ConsoleInputProps) {
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -18,19 +21,38 @@ export default function ConsoleInput({ onOpenCreateForm }: ConsoleInputProps) {
 
   // Update suggestions based on input
   useEffect(() => {
-    if (input.trim()) {
-      const filtered = AVAILABLE_COMMANDS.filter(cmd =>
-        cmd.toLowerCase().startsWith(input.toLowerCase())
+    const trimmedInput = input.trimStart();
+    const lowerInput = trimmedInput.toLowerCase();
+    
+    // 1. Suggest commands if input doesn't have a space yet
+    if (trimmedInput && !trimmedInput.includes(' ')) {
+      const filteredCmds = AVAILABLE_COMMANDS.filter(cmd =>
+        cmd.startsWith(lowerInput)
       );
-      setSuggestions(filtered);
-      // Auto-select first suggestion
-      setSelectedIndex(filtered.length > 0 ? 0 : -1);
-    } else {
-      setSuggestions([]);
-      setSelectedIndex(-1);
+      setSuggestions(filteredCmds);
+      setSelectedIndex(filteredCmds.length > 0 ? 0 : -1);
+      setError('');
+      return;
     }
+
+    // 2. Suggest tasks for 'delete' command
+    if (lowerInput.startsWith('delete ')) {
+      const query = trimmedInput.slice(7).toLowerCase(); // remove "delete "
+      const matchingTasks = tasks
+        .filter(t => t.syntax.toLowerCase().includes(query))
+        .map(t => `delete ${t.syntax}`);
+      
+      setSuggestions(matchingTasks);
+      setSelectedIndex(matchingTasks.length > 0 ? 0 : -1);
+      setError('');
+      return;
+    }
+
+    // Default: clear suggestions
+    setSuggestions([]);
+    setSelectedIndex(-1);
     setError('');
-  }, [input]);
+  }, [input, tasks]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     // Handle arrow keys for suggestion navigation
@@ -57,19 +79,50 @@ export default function ConsoleInput({ onOpenCreateForm }: ConsoleInputProps) {
 
     // Handle Enter for commands
     if (e.key === 'Enter' && input.trim()) {
-      const trimmedInput = input.trim().toLowerCase();
+      const trimmedInput = input.trim();
+      
+      // Parse command
+      const [cmd, ...args] = trimmedInput.split(' ');
+      const commandName = cmd.toLowerCase();
+      const argsStr = args.join(' ');
 
       // Check if command is valid
-      if (!AVAILABLE_COMMANDS.includes(trimmedInput)) {
-        setError(`Command not found: ${input.trim()}`);
+      if (!AVAILABLE_COMMANDS.includes(commandName)) {
+        setError(`Command not found: ${commandName}`);
         setTimeout(() => setError(''), 2000);
         return;
       }
 
-      // Execute command
-      if (trimmedInput === 'create') {
+      // Execute 'create'
+      if (commandName === 'create') {
         console.log('[COMMAND] Opening create form...');
         onOpenCreateForm();
+        setInput('');
+        setSuggestions([]);
+        setError('');
+        return;
+      }
+
+      // Execute 'delete'
+      if (commandName === 'delete') {
+        if (!argsStr) {
+          setError('Usage: delete <task_name>');
+          setTimeout(() => setError(''), 2000);
+          return;
+        }
+
+        // Find task by EXACT syntax match (case-insensitive for convenience, or case-sensitive?)
+        // Let's do exact match on syntax string
+        const targetTask = tasks.find(t => t.syntax === argsStr);
+
+        if (!targetTask) {
+          setError(`Task not found: "${argsStr}"`);
+          setTimeout(() => setError(''), 2000);
+          return;
+        }
+
+        console.log('[COMMAND] Deleting task:', targetTask);
+        onDeleteTask(targetTask.id);
         setInput('');
         setSuggestions([]);
         setError('');
@@ -105,7 +158,7 @@ export default function ConsoleInput({ onOpenCreateForm }: ConsoleInputProps) {
 
       {/* Autocomplete Suggestions */}
       {!error && suggestions.length > 0 && (
-        <div className="absolute bottom-full left-0 right-0 bg-terminal-bg border-t border-terminal-border max-w-4xl mx-auto px-4">
+        <div className="absolute bottom-full left-0 right-0 bg-terminal-bg border-t border-terminal-border max-w-4xl mx-auto px-4 max-h-60 overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <div
               key={suggestion}
@@ -134,7 +187,7 @@ export default function ConsoleInput({ onOpenCreateForm }: ConsoleInputProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder='type "create" to push new task...'
+          placeholder='type "create" or "delete <task>"...'
           className={`
             flex-1 bg-transparent font-mono text-sm outline-none
             ${error ? 'text-red-400' : 'text-terminal-text'}
