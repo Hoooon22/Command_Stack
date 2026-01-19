@@ -1,6 +1,6 @@
 {
   "name": "commandstack-electron",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "CommandStack - Developer-centric personal management system",
   "author": "Devzip <devzip@devzip.com>",
   "homepage": "https://github.com/Hoooon22/Command_Stack",
@@ -78,6 +78,11 @@
       "target": ["AppImage", "deb"],
       "category": "Utility",
       "maintainer": "Devzip <devzip@devzip.com>"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Hoooon22",
+      "repo": "Command_Stack"
     }
   },
   "dependencies": {

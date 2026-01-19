@@ -217,30 +217,67 @@ function createMenu() {
 function setupAutoUpdater() {
   if (isDev) return;
 
+  // 자동 다운로드 비활성화 (사용자에게 먼저 묻기 위해)
+  autoUpdater.autoDownload = false;
+
   const updateConfigPath = path.join(process.resourcesPath, 'app-update.yml');
+  // app-update.yml 파일이 없으면 electron-updater가 기본적으로 에러를 내거나 동작하지 않을 수 있음
+  // 하지만 packaged 된 앱에서는 자동으로 생성되므로 굳이 체크하지 않아도 됨.
+  // 여기서는 로깅만 남기고 진행.
   if (!fs.existsSync(updateConfigPath)) {
-    console.warn(`Auto update config missing: ${updateConfigPath}`);
-    return;
+    console.warn(`[AutoUpdate] Config not found at ${updateConfigPath}, relying on internal config.`);
   }
 
-  autoUpdater.checkForUpdatesAndNotify();
+  // 업데이트 확인 시작
+  autoUpdater.checkForUpdates();
 
-  autoUpdater.on('update-available', () => {
-    console.log('Update available');
+  // 업데이트가 감지되었을 때
+  autoUpdater.on('update-available', (info) => {
+    console.log('Update available:', info);
+    const { dialog } = require('electron');
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Update Available',
+      message: `A new version (${info.version}) is available.\nDo you want to download it now?`,
+      buttons: ['Download', 'Later'],
+      defaultId: 0,
+      cancelId: 1
+    }).then((result) => {
+      if (result.response === 0) { // Download 선택
+        console.log('User accepted update, downloading...');
+        autoUpdater.downloadUpdate();
+      }
+    });
   });
 
+  // 다운로드 진행 상황 로깅
+  autoUpdater.on('download-progress', (progressObj) => {
+    let log_message = "Download speed: " + progressObj.bytesPerSecond;
+    log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+    log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+    console.log(log_message);
+  });
+
+  // 다운로드 완료 시
   autoUpdater.on('update-downloaded', () => {
     const { dialog } = require('electron');
     dialog.showMessageBox({
       type: 'info',
       title: 'Update Ready',
-      message: 'A new version has been downloaded. Restart to apply updates?',
-      buttons: ['Restart', 'Later']
+      message: 'Update downloaded. Restart the application to install updates?',
+      buttons: ['Restart', 'Later'],
+      defaultId: 0,
+      cancelId: 1
     }).then((result) => {
-      if (result.response === 0) {
+      if (result.response === 0) { // Restart 선택
         autoUpdater.quitAndInstall();
       }
     });
+  });
+
+  // 업데이트 관련 에러 발생 시
+  autoUpdater.on('error', (err) => {
+    console.error('Auto update error:', err);
   });
 }
 
