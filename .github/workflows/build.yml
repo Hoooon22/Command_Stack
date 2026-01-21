@@ -71,6 +71,7 @@ jobs:
             electron/dist/*.exe
             electron/dist/*.AppImage
             electron/dist/*.deb
+            electron/dist/*.yml
           retention-days: 7
 
   release:
@@ -91,5 +92,6 @@ jobs:
             dist/**/*.exe
             dist/**/*.AppImage
             dist/**/*.deb
+            dist/**/*.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
