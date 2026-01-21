@@ -16,7 +16,13 @@ async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
     throw new Error(`API Error: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  // Handle empty response (e.g., DELETE returns 204 No Content)
+  const text = await response.text();
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text);
 }
 
 // Context API
