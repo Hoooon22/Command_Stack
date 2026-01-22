@@ -246,6 +246,18 @@ function setupAutoUpdater() {
     });
   });
 
+  // 이미 최신 버전일 때
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('Already up to date:', info);
+    const { dialog } = require('electron');
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'No Updates',
+      message: `You're on the latest version (${info.version}).`,
+      buttons: ['OK']
+    });
+  });
+
   // 업데이트 관련 에러 발생 시
   autoUpdater.on('error', (err) => {
     console.error('Auto update error:', err);
