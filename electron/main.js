@@ -29,12 +29,15 @@ function startServer() {
   ensureDirectories();
 
   const jarPath = isDev
-    ? path.join(__dirname, '..', 'server', 'build', 'libs', 'commandstack-1.0.3.jar')
-    : path.join(process.resourcesPath, 'server', 'commandstack-1.0.3.jar');
+    ? path.join(__dirname, '..', 'server', 'build', 'libs', 'commandstack-1.0.10.jar')
+    : path.join(process.resourcesPath, 'server', 'commandstack-1.0.10.jar');
 
   console.log('Starting Spring Boot server...');
   console.log('JAR path:', jarPath);
   console.log('Database path:', path.join(dbPath, 'commandstack'));
+
+  // 로그 파일 스트림 생성
+  const logStream = fs.createWriteStream(path.join(logsPath, 'server.log'), { flags: 'a' });
 
   const javaArgs = [
     '-jar',
@@ -50,11 +53,15 @@ function startServer() {
   });
 
   serverProcess.stdout.on('data', (data) => {
-    console.log(`[SERVER] ${data.toString()}`);
+    const log = `[SERVER] ${data.toString()}`;
+    console.log(log);
+    logStream.write(log);
   });
 
   serverProcess.stderr.on('data', (data) => {
-    console.error(`[SERVER ERROR] ${data.toString()}`);
+    const log = `[SERVER ERROR] ${data.toString()}`;
+    console.error(log);
+    logStream.write(log);
   });
 
   serverProcess.on('close', (code) => {
