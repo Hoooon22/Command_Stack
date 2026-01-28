@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final AuthService authService;
+    private final GoogleCalendarService googleCalendarService;
 
     @Transactional
     public TaskResponse createTask(TaskCreateRequest request) {
@@ -30,7 +32,19 @@ public class TaskService {
                 .type(request.getType())
                 .contextId(request.getContextId())
                 .deadline(request.getDeadline())
+                .syncToGoogle(request.isSyncToGoogle())
                 .build();
+
+        // Google Calendar 연동
+        if (request.isSyncToGoogle()) {
+            authService.getCurrentUser().ifPresent(user -> {
+                task.setUserId(user.getId());
+                String eventId = googleCalendarService.createEvent(user, task);
+                if (eventId != null) {
+                    task.setGoogleEventId(eventId);
+                }
+            });
+        }
 
         Task savedTask = taskRepository.save(task);
         return TaskResponse.from(savedTask);
@@ -71,13 +85,34 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found with id:" + id));
 
+        boolean wasSync = task.isSyncToGoogle();
+
         task.update(
                 request.getSyntax(),
                 request.getDetails(),
                 request.getType(),
                 request.getContextId(),
-                request.getDeadline()
-        );
+                request.getDeadline(),
+                request.isSyncToGoogle());
+
+        // Google Calendar Sync Logic
+        authService.getCurrentUser().ifPresent(user -> {
+            boolean isSync = task.isSyncToGoogle();
+
+            if (isSync) {
+                if (wasSync && task.getGoogleEventId() != null) {
+                    googleCalendarService.updateEvent(user, task);
+                } else {
+                    String eventId = googleCalendarService.createEvent(user, task);
+                    if (eventId != null) {
+                        task.setGoogleEventId(eventId);
+                    }
+                }
+            } else if (wasSync) {
+                googleCalendarService.deleteEvent(user, task.getGoogleEventId());
+                task.setGoogleEventId(null);
+            }
+        });
 
         return TaskResponse.from(task);
     }
@@ -94,9 +129,16 @@ public class TaskService {
 
     @Transactional
     public void deleteTask(Long id) {
-        if (!taskRepository.existsById(id)) {
-            throw new IllegalArgumentException("Task not found with id:" + id);
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with id:" + id));
+
+        if (task.getGoogleEventId() != null) {
+            final String eventId = task.getGoogleEventId();
+            authService.getCurrentUser().ifPresent(user -> {
+                googleCalendarService.deleteEvent(user, eventId);
+            });
         }
+
         taskRepository.deleteById(id);
     }
 }

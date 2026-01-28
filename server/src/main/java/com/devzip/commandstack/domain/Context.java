@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 @Builder
 public class Context {
 
+    public static final String NAMESPACE_GOOGLE = "Google";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -1,4 +1,4 @@
-import type { Task, Context } from '../types';
+import type { Task, Context, User, GoogleCalendarEvent } from '../types';
 
 const API_BASE_URL = 'http://localhost:8090/api';
 
@@ -9,6 +9,7 @@ async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
       'Content-Type': 'application/json',
       ...options?.headers,
     },
+    credentials: 'include', // Include cookies for session
     ...options,
   });
 
@@ -68,4 +69,42 @@ export const taskApi = {
     }),
   delete: (id: number) =>
     apiCall<void>(`/tasks/${id}`, { method: 'DELETE' }),
+};
+
+// Auth API
+export const authApi = {
+  // Get login URL - redirect user to this URL for Google OAuth
+  getLoginUrl: () => `${API_BASE_URL.replace('/api', '')}/oauth2/authorization/google`,
+  
+  // Get current user info
+  getCurrentUser: () => apiCall<User>('/auth/me'),
+  
+  // Check if user is authenticated
+  isAuthenticated: async (): Promise<boolean> => {
+    try {
+      await apiCall<User>('/auth/me');
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  
+  // Logout
+  logout: () => apiCall<void>('/auth/logout', { method: 'POST' }),
+};
+
+// Calendar API
+export const calendarApi = {
+  // Get Google Calendar events
+  // Get Google Calendar events
+  getEvents: (start: string, end: string) => {
+    const params = new URLSearchParams();
+    params.append('start', start);
+    params.append('end', end);
+    const queryString = params.toString();
+    return apiCall<GoogleCalendarEvent[]>(`/calendar/events?${queryString}`);
+  },
+  
+  // Sync all tasks to Google Calendar
+  syncAll: () => apiCall<void>('/calendar/sync', { method: 'POST' }),
 };

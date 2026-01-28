@@ -23,6 +23,8 @@ public class TaskResponse {
     private LocalDateTime deadline;
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
+    private boolean syncToGoogle;
+    private String googleEventId;
 
     public static TaskResponse from(Task task) {
         return TaskResponse.builder()
@@ -35,6 +37,8 @@ public class TaskResponse {
                 .deadline(task.getDeadline())
                 .startedAt(task.getStartedAt())
                 .completedAt(task.getCompletedAt())
+                .syncToGoogle(task.isSyncToGoogle())
+                .googleEventId(task.getGoogleEventId())
                 .build();
     }
 }

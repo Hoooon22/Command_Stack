@@ -26,4 +26,6 @@ public class TaskCreateRequest {
     private Long contextId;
 
     private LocalDateTime deadline;
+
+    private boolean syncToGoogle = false;
 }

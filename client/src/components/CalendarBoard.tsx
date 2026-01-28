@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Task, Context } from '../types';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { calendarApi } from '../api';
+import { useAuth } from '../contexts';
+import { ChevronLeft, ChevronRight, Plus, RefreshCw } from 'lucide-react';
+import { GoogleLoginButton, UserAvatar } from './Auth';
 
 interface CalendarBoardProps {
   tasks: Task[];
@@ -10,7 +13,10 @@ interface CalendarBoardProps {
 }
 
 export default function CalendarBoard({ tasks, contexts, onTaskClick, onCreateTask }: CalendarBoardProps) {
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+  const { isAuthenticated, user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [isSyncing, setIsSyncing] = useState(false);
   const barHeight = 18;
   const barGap = 4;
   const dayLabelHeight = 22;
@@ -55,6 +61,41 @@ export default function CalendarBoard({ tasks, contexts, onTaskClick, onCreateTa
     calendarDays.slice(weekIdx * 7, weekIdx * 7 + 7)
   );
 
+  // Auto-sync on load (once per session)
+  useEffect(() => {
+    const autoSync = async () => {
+      if (isAuthenticated && !sessionStorage.getItem('google_synced')) {
+        try {
+          // Mark as synced immediately to prevent double firing
+          sessionStorage.setItem('google_synced', 'true');
+          await calendarApi.syncAll();
+          window.location.reload();
+        } catch (error) {
+          console.error('Auto-sync failed:', error);
+          // Retry next time on error? Or leave it.
+          // sessionStorage.removeItem('google_synced'); // Uncomment to retry logic
+        }
+      }
+    };
+    autoSync();
+  }, [isAuthenticated]);
+
+  const handleSyncGoogle = async () => {
+    if (!isAuthenticated || isSyncing) return;
+    
+    setIsSyncing(true);
+    try {
+      await calendarApi.syncAll();
+      alert('Google Calendar synced to tasks.');
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to sync google calendar:', error);
+      alert('Failed to sync with Google Calendar.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const getTasksForDay = (day: number | null) => {
     if (!day) return [];
     const targetDate = new Date(year, month, day);
@@ -65,6 +106,8 @@ export default function CalendarBoard({ tasks, contexts, onTaskClick, onCreateTa
       return isSameDay(deadlineDate, targetDate);
     });
   };
+
+
 
   const getContextColor = (contextId: number) => {
     const context = contexts.find(ctx => ctx.id === contextId);
@@ -151,7 +194,7 @@ export default function CalendarBoard({ tasks, contexts, onTaskClick, onCreateTa
         <h2 className="text-sm font-mono text-terminal-green">
           {monthNames[month]} {year}
         </h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           {onCreateTask && (
             <button
               onClick={() => {
@@ -178,6 +221,32 @@ export default function CalendarBoard({ tasks, contexts, onTaskClick, onCreateTa
           >
             <ChevronRight size={18} />
           </button>
+          
+          {isAuthenticated && (
+            <button
+              onClick={handleSyncGoogle}
+              disabled={isSyncing}
+              className={`p-1 hover:bg-terminal-border/30 rounded text-terminal-text ml-2 ${isSyncing ? 'opacity-50' : ''}`}
+              title="Sync (Import) Google Calendar Tasks"
+            >
+              <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
+            </button>
+          )}
+
+          <div className="ml-4 h-6 w-px bg-terminal-border/50" />
+          
+          <div className="ml-2">
+            {isAuthenticated && user ? (
+              <UserAvatar 
+                user={user} 
+                onLogout={() => window.location.reload()} 
+              />
+            ) : (
+              <div className="w-[100px]">
+                 <GoogleLoginButton />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -236,6 +305,7 @@ export default function CalendarBoard({ tasks, contexts, onTaskClick, onCreateTa
                             {day}
                           </div>
                           <div className="space-y-1 relative z-40">
+                            {/* CommandStack Tasks */}
                             {dayTasks.map(task => {
                               const color = getContextColor(task.contextId);
                               return (
@@ -257,6 +327,8 @@ export default function CalendarBoard({ tasks, contexts, onTaskClick, onCreateTa
                                 </div>
                               );
                             })}
+
+
                           </div>
                         </>
                       )}

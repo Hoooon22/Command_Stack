@@ -45,6 +45,15 @@ public class Task {
 
     private LocalDateTime updatedAt;
 
+    // Google Calendar 연동 필드
+    private String googleEventId;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean syncToGoogle = false;
+
+    private Long userId;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -67,7 +76,7 @@ public class Task {
         }
 
         if ((newStatus == TaskStatus.EXIT_SUCCESS || newStatus == TaskStatus.SIGKILL)
-            && this.completedAt == null) {
+                && this.completedAt == null) {
             this.completedAt = LocalDateTime.now();
         }
     }
@@ -78,6 +87,28 @@ public class Task {
         this.type = type;
         this.contextId = contextId;
         this.deadline = deadline;
+    }
+
+    public void update(String syntax, String details, TaskType type, Long contextId, LocalDateTime deadline,
+            boolean syncToGoogle) {
+        this.syntax = syntax;
+        this.details = details;
+        this.type = type;
+        this.contextId = contextId;
+        this.deadline = deadline;
+        this.syncToGoogle = syncToGoogle;
+    }
+
+    public void setGoogleEventId(String googleEventId) {
+        this.googleEventId = googleEventId;
+    }
+
+    public void setSyncToGoogle(boolean syncToGoogle) {
+        this.syncToGoogle = syncToGoogle;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public enum TaskStatus {

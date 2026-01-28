@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
-import { X, Terminal } from 'lucide-react';
+import { X, Terminal, Calendar } from 'lucide-react';
 import type { Task, Context } from '../types';
+import { useAuth } from '../contexts';
 
 interface TaskCreateFormProps {
   contexts: Context[];
@@ -24,6 +25,8 @@ export default function TaskCreateForm({
   const [contextId, setContextId] = useState(contexts[0]?.id || 1);
   const [deadlineDate, setDeadlineDate] = useState('');
   const [deadlineTime, setDeadlineTime] = useState('');
+  const [syncToGoogle, setSyncToGoogle] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   // Initialize form data
   useEffect(() => {
@@ -40,6 +43,7 @@ export default function TaskCreateForm({
         setDeadlineDate(dateStr);
         setDeadlineTime(timeStr);
       }
+      setSyncToGoogle(!!initialData.syncToGoogle);
     } else if (prefilledDeadline) {
       const date = new Date(prefilledDeadline);
       const dateStr = date.toISOString().split('T')[0];
@@ -73,6 +77,7 @@ export default function TaskCreateForm({
       type,
       contextId,
       deadline,
+      syncToGoogle,
     });
 
     onClose();
@@ -175,7 +180,14 @@ export default function TaskCreateForm({
               </label>
               <select
                 value={contextId}
-                onChange={(e) => setContextId(Number(e.target.value))}
+                onChange={(e) => {
+                  const newId = Number(e.target.value);
+                  setContextId(newId);
+                  const selectedContext = contexts.find(c => c.id === newId);
+                  if (selectedContext?.namespace === 'Google') {
+                    setSyncToGoogle(true);
+                  }
+                }}
                 className="w-full bg-terminal-bg border border-terminal-border rounded px-3 py-2
                            text-terminal-text font-mono text-sm outline-none
                            focus:border-terminal-green transition-colors cursor-pointer"
@@ -213,6 +225,27 @@ export default function TaskCreateForm({
               />
             </div>
           </div>
+
+          {/* Sync to Google Calendar */}
+          {isAuthenticated && (
+            <div className="mb-4 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="syncToGoogle"
+                checked={syncToGoogle}
+                onChange={(e) => setSyncToGoogle(e.target.checked)}
+                className="w-4 h-4 rounded border-terminal-border bg-terminal-bg text-terminal-green
+                           focus:ring-1 focus:ring-terminal-green cursor-pointer accent-terminal-green"
+              />
+              <label 
+                htmlFor="syncToGoogle" 
+                className="text-xs font-mono text-terminal-green cursor-pointer flex items-center gap-1.5 select-none"
+              >
+                <Calendar size={14} />
+                Sync to Google Calendar
+              </label>
+            </div>
+          )}
 
           {/* Buttons */}
           <div className="flex justify-end gap-3 pt-4 border-t border-terminal-border">

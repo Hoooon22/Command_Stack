@@ -16,6 +16,7 @@ export default function Sidebar({
   onSelectContext,
   onCreateContext,
   onUpdateContext,
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 }: SidebarProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,6 +26,7 @@ export default function Sidebar({
     description: '',
     color: '#50fa7b',
   });
+
 
   // Terminal-themed color palette
   const colorPalette = [
