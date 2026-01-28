@@ -36,8 +36,46 @@ function startServer() {
   console.log('JAR path:', jarPath);
   console.log('Database path:', path.join(dbPath, 'commandstack'));
 
-  // 로그 파일 스트림 생성
-  const logStream = fs.createWriteStream(path.join(logsPath, 'server.log'), { flags: 'a' });
+// 딥링크 설정 (macOS & Windows)
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('commandstack', process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('commandstack');
+}
+
+// macOS: 딥링크로 실행될 때
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  // commandstack://auth-success 로 돌아오면 창을 띄움
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+    // 필요하다면 여기서 렌더러로 메시지를 보낼 수 있음
+    // mainWindow.webContents.send('auth-success', url);
+    // 현재는 단순히 앱을 포커스하고, 프론트엔드가 /api/auth/me 를 호출하여 로그인 확인
+    mainWindow.loadURL(isDev ? 'http://localhost:5173/auth/callback' : `file://${path.join(process.resourcesPath, 'client', 'dist', 'index.html')}#/auth/callback`);
+  }
+});
+
+// Windows: 딥링크로 실행될 때 (Second Instance Lock)
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Windows에서는 commandLine 배열 안에 URL이 포함됨
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      // URL 파싱 및 처리 로직 추가 가능
+    }
+  });
+}
+
+// 로그 파일 스트림 생성
+const logStream = fs.createWriteStream(path.join(logsPath, 'server.log'), { flags: 'a' });
 
   const javaArgs = [
     '-jar',
@@ -45,7 +83,9 @@ function startServer() {
     `--spring.datasource.url=jdbc:h2:file:${path.join(dbPath, 'commandstack')};AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9092`,
     '--spring.h2.console.enabled=false',
     '--spring.jpa.hibernate.ddl-auto=update',
-    '--server.port=8090'
+    '--spring.jpa.hibernate.ddl-auto=update',
+    '--server.port=8090',
+    '--spring.profiles.active=prod'
   ];
 
   serverProcess = spawn('java', javaArgs, {

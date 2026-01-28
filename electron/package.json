@@ -60,6 +60,14 @@
       "entitlements": "assets/entitlements.mac.plist",
       "entitlementsInherit": "assets/entitlements.mac.plist"
     },
+    "protocols": [
+      {
+        "name": "CommandStack",
+        "schemes": [
+          "commandstack"
+        ]
+      }
+    ],
     "win": {
       "icon": "assets/installer.ico",
       "target": [

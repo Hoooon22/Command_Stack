@@ -24,6 +24,12 @@ public class AuthController {
     /**
      * OAuth2 로그인 성공 후 리다이렉트
      */
+    @org.springframework.beans.factory.annotation.Value("${app.auth.redirect-url}")
+    private String redirectUrl;
+
+    /**
+     * OAuth2 로그인 성공 후 리다이렉트
+     */
     @GetMapping("/success")
     public void loginSuccess(OAuth2AuthenticationToken authentication,
             HttpServletResponse response) throws IOException {
@@ -34,7 +40,7 @@ public class AuthController {
         log.info("User saved/updated: {}", user.getEmail());
 
         // 프론트엔드로 리다이렉트
-        response.sendRedirect("http://localhost:5173?login=success");
+        response.sendRedirect(redirectUrl);
     }
 
     /**

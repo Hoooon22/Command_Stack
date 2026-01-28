@@ -54,21 +54,37 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-// Load .env file
-def envFile = file("${project.rootDir}/../.env")
-if (envFile.exists()) {
-	envFile.eachLine { line ->
-		if (!line.startsWith("#") && line.contains("=")) {
-			def (key, value) = line.tokenize("=")
-			if (key && value) {
-				project.ext[key.trim()] = value.trim()
-			}
-		}
-	}
+import org.apache.tools.ant.filters.ReplaceTokens
+
+// Custom task to verify .env loading
+tasks.register('checkEnv') {
+    doLast {
+        def envLocation = file("../.env")
+        println "Checking env file at: ${envLocation.absolutePath}"
+        if (envLocation.exists()) {
+            println "Found .env file"
+        } else {
+            println "WARNING: .env file NOT FOUND at ${envLocation.absolutePath}"
+        }
+    }
 }
 
 processResources {
-	filesMatching('application.properties') {
-		expand(project.properties)
-	}
+    dependsOn 'checkEnv'
+    filesMatching('application.properties') {
+        def props = [:]
+        def envLoc = file("../.env")
+        if (envLoc.exists()) {
+            envLoc.eachLine { line ->
+                if (!line.startsWith("#") && line.contains("=")) {
+                    def keyVal = line.split("=", 2)
+                    if (keyVal.size() == 2) {
+                        props[keyVal[0].trim()] = keyVal[1].trim()
+                        println "Loaded config: ${keyVal[0].trim()}"
+                    }
+                }
+            }
+        }
+        filter(ReplaceTokens, tokens: props)
+    }
 }
