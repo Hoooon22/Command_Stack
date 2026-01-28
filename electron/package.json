@@ -40,6 +40,10 @@
         "from": "../server/build/libs",
         "to": "server",
         "filter": ["*.jar"]
+      },
+      {
+        "from": "../.env",
+        "to": "server/.env"
       }
     ],
     "mac": {

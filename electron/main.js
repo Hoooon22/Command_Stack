@@ -49,7 +49,8 @@ function startServer() {
   ];
 
   serverProcess = spawn('java', javaArgs, {
-    env: { ...process.env }
+    env: { ...process.env },
+    cwd: path.dirname(jarPath)
   });
 
   serverProcess.stdout.on('data', (data) => {
