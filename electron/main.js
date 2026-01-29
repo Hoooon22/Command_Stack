@@ -24,6 +24,72 @@ function ensureDirectories() {
   });
 }
 
+// 메인 프로세스 로그 유틸리티
+function logToMain(message) {
+  const logMsg = `[MAIN] ${new Date().toISOString()} ${message}\n`;
+  console.log(logMsg.trim());
+  try {
+    fs.appendFileSync(path.join(logsPath, 'main.log'), logMsg);
+  } catch (e) {
+    console.error('Failed to write to main.log', e);
+  }
+}
+
+// 딥링크 설정 (macOS & Windows)
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('commandstack', process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('commandstack');
+}
+
+// 딥링크로 실행될 때를 위한 글로벌 변수
+let deepLinkUrl = null;
+
+// macOS: 딥링크로 실행될 때
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  deepLinkUrl = url; // 윈도우 생성 전이면 URL 저장
+  
+  ensureDirectories(); // 로그 디렉토리 확인
+  logToMain(`Deep link received (open-url): ${url}`);
+
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+
+    try {
+      // URL에서 토큰 추출
+      const token = new URL(url).searchParams.get('token');
+      if (token) {
+         logToMain(`Token extracted: ${token.substring(0, 5)}...`);
+         
+         // 전체 페이지를 새로 로드 (가장 확실한 방법)
+         const targetUrl = isDev 
+           ? `http://localhost:5173#/auth/callback?token=${token}`
+           : `http://localhost:8090#/auth/callback?token=${token}`;
+         
+         logToMain(`Loading URL: ${targetUrl}`);
+         mainWindow.loadURL(targetUrl);
+         
+         // IPC도 백업으로 전송
+         mainWindow.webContents.once('did-finish-load', () => {
+           logToMain('Page loaded, sending IPC token as backup');
+           mainWindow.webContents.send('deep-link-token', token);
+         });
+      } else {
+         logToMain('No token found in deep link URL');
+      }
+    } catch (e) {
+      logToMain(`Deep link error: ${e.message}`);
+      console.error('Deep link error:', e);
+    }
+  } else {
+    logToMain('mainWindow not ready yet considering deep link stored.');
+  }
+});
+
 // Spring Boot 서버 시작
 function startServer() {
   ensureDirectories();
@@ -35,29 +101,6 @@ function startServer() {
   console.log('Starting Spring Boot server...');
   console.log('JAR path:', jarPath);
   console.log('Database path:', path.join(dbPath, 'commandstack'));
-
-// 딥링크 설정 (macOS & Windows)
-if (process.defaultApp) {
-  if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient('commandstack', process.execPath, [path.resolve(process.argv[1])]);
-  }
-} else {
-  app.setAsDefaultProtocolClient('commandstack');
-}
-
-// macOS: 딥링크로 실행될 때
-app.on('open-url', (event, url) => {
-  event.preventDefault();
-  // commandstack://auth-success 로 돌아오면 창을 띄움
-  if (mainWindow) {
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
-    // 필요하다면 여기서 렌더러로 메시지를 보낼 수 있음
-    // mainWindow.webContents.send('auth-success', url);
-    // 현재는 단순히 앱을 포커스하고, 프론트엔드가 /api/auth/me 를 호출하여 로그인 확인
-    mainWindow.loadURL(isDev ? 'http://localhost:5173/auth/callback' : `file://${path.join(process.resourcesPath, 'client', 'dist', 'index.html')}#/auth/callback`);
-  }
-});
 
 // Windows: 딥링크로 실행될 때 (Second Instance Lock)
 const gotTheLock = app.requestSingleInstanceLock();
@@ -82,7 +125,6 @@ const logStream = fs.createWriteStream(path.join(logsPath, 'server.log'), { flag
     jarPath,
     `--spring.datasource.url=jdbc:h2:file:${path.join(dbPath, 'commandstack')};AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9092`,
     '--spring.h2.console.enabled=false',
-    '--spring.jpa.hibernate.ddl-auto=update',
     '--spring.jpa.hibernate.ddl-auto=update',
     '--server.port=8090',
     '--spring.profiles.active=prod'
@@ -158,14 +200,42 @@ function createWindow() {
     icon: path.join(__dirname, 'assets', 'icon.png')
   });
 
-  // 개발 모드: Vite 개발 서버
-  // 프로덕션: 빌드된 정적 파일
-  if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+  // 개발 모드: Vite 개발 서버 (5173)
+  // 프로덕션: Spring Boot 서버를 통해 클라이언트 서빙 (8090)
+  // 이렇게 하면 동일 origin에서 API 호출이 가능하여 CORS/쿠키 문제 해결
+  let startUrl;
+  let startupToken = null;
+  
+  if (deepLinkUrl) {
+    try {
+      const token = new URL(deepLinkUrl).searchParams.get('token');
+      if (token) {
+        startupToken = token; // 토큰 저장
+        startUrl = isDev 
+          ? `http://localhost:5173#/auth/callback?token=${token}`
+          : `http://localhost:8090#/auth/callback?token=${token}`;
+      } else {
+        // 토큰 없으면 일반 시작
+        startUrl = isDev ? 'http://localhost:5173' : 'http://localhost:8090';
+      }
+      deepLinkUrl = null; // 초기화
+    } catch (e) {
+      console.error('Error parsing commandstack URL:', e);
+      startUrl = isDev ? 'http://localhost:5173' : 'http://localhost:8090';
+    }
   } else {
-    const indexPath = path.join(process.resourcesPath, 'client', 'dist', 'index.html');
-    mainWindow.loadFile(indexPath);
+    startUrl = isDev ? 'http://localhost:5173' : 'http://localhost:8090';
   }
+
+  mainWindow.loadURL(startUrl);
+
+  // 창이 로로드 완료되면 IPC로 토큰 전송 시도 (초기 실행 시)
+  mainWindow.webContents.on('did-finish-load', () => {
+    if (startupToken) { 
+        logToMain(`Sending startup token via IPC: ${startupToken.substring(0, 5)}...`);
+        mainWindow.webContents.send('deep-link-token', startupToken);
+    }
+  });
 
   // 개발자 도구
   if (isDev) {

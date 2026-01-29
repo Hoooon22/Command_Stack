@@ -48,7 +48,7 @@ public class Task {
     // Google Calendar 연동 필드
     private String googleEventId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean default false")
     @Builder.Default
     private boolean syncToGoogle = false;
 

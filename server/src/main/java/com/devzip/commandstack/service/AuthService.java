@@ -104,4 +104,35 @@ public class AuthService {
                 && authentication.isAuthenticated()
                 && authentication instanceof OAuth2AuthenticationToken;
     }
+
+    private final Map<String, TokenInfo> oneTimeAuthTokens = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private record TokenInfo(Authentication authentication, LocalDateTime expiresAt) {
+    }
+
+    public String createOneTimeToken(Authentication authentication) {
+        // Generate a random UUID token
+        String token = java.util.UUID.randomUUID().toString();
+        // Store it with 1 minute expiration
+        oneTimeAuthTokens.put(token, new TokenInfo(authentication, LocalDateTime.now().plusMinutes(1)));
+
+        // Clean up expired tokens lazily (optional, but good practice)
+        oneTimeAuthTokens.entrySet().removeIf(entry -> entry.getValue().expiresAt().isBefore(LocalDateTime.now()));
+
+        return token;
+    }
+
+    public Authentication exchangeToken(String token) {
+        TokenInfo info = oneTimeAuthTokens.remove(token);
+
+        if (info == null) {
+            return null;
+        }
+
+        if (info.expiresAt().isBefore(LocalDateTime.now())) {
+            return null;
+        }
+
+        return info.authentication();
+    }
 }

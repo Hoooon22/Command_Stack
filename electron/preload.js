@@ -11,6 +11,13 @@ contextBridge.exposeInMainWorld('electron', {
     node: process.versions.node,
     chrome: process.versions.chrome,
     electron: process.versions.electron
+  },
+  
+  // Deep Link 이벤트 리스너
+  onDeepLink: (callback) => {
+    const subscription = (_event, token) => callback(token);
+    ipcRenderer.on('deep-link-token', subscription);
+    return () => ipcRenderer.removeListener('deep-link-token', subscription);
   }
 });
 

@@ -20,7 +20,13 @@ npm install
 npm run build
 cd ..
 
-# 3. Build Spring Boot Server
+# 2.5 Copy client build to Spring Boot static folder
+echo ""
+echo "📋 Copying client build to Spring Boot static folder..."
+rm -rf server/src/main/resources/static/*
+cp -r client/dist/* server/src/main/resources/static/
+
+# 3. Build Spring Boot Server (now includes client static files)
 echo ""
 echo "☕ Building Spring Boot server..."
 cd server

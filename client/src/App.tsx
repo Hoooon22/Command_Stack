@@ -9,7 +9,12 @@ import type { Task, Context } from './types';
 import { taskApi, contextApi } from './api';
 import pkg from '../package.json';
 
+import AuthCallback from './components/Auth/AuthCallback';
+
+import { useAuth } from './contexts/AuthContext';
+
 function App() {
+  useAuth(); // Auth context initialization
   const [viewMode, setViewMode] = useState<ViewMode>('schedule');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [archivedTasks, setArchivedTasks] = useState<Task[]>([]);
@@ -20,11 +25,51 @@ function App() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Simple hash-based routing for Auth Callback
+  const [isAuthCallback, setIsAuthCallback] = useState(false);
+
+  useEffect(() => {
+    const checkHash = () => {
+      if (window.location.hash.startsWith('#/auth/callback')) {
+        setIsAuthCallback(true);
+      } else {
+        setIsAuthCallback(false);
+      }
+    };
+
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
+    return () => window.removeEventListener('hashchange', checkHash);
+  }, []);
+
+  // IPC Deep Link Listener (Backup/Primary for packaged app)
+  useEffect(() => {
+    // @ts-ignore
+    if (window.electron && window.electron.onDeepLink) {
+      // @ts-ignore
+      const cleanup = window.electron.onDeepLink(async (token) => {
+        console.log('[IPC] Received token:', token);
+        try {
+          setIsAuthCallback(true); // Show loading state (AuthCallback component)
+          // Manually manipulate hash to trigger AuthCallback component logic
+          // OR better yet, just do the exchange here if AuthCallback relies on URL parmas.
+          // Let's set the hash so AuthCallback picks it up, as it has the logic.
+          window.location.hash = `#/auth/callback?token=${token}`;
+        } catch (e: any) {
+          console.error('[IPC] Error handling token:', e);
+        }
+      });
+      return cleanup;
+    }
+  }, []);
 
   // Load initial data
   useEffect(() => {
-    loadData();
-  }, [isArchiveView]);
+    if (!isAuthCallback) {
+      loadData();
+    }
+  }, [isArchiveView, isAuthCallback]);
 
   const loadData = async () => {
     try {
@@ -41,7 +86,7 @@ function App() {
         setTasks(tasksData);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load data');
+      // Ignore auth errors during initial load, user might be guests
       console.error('Error loading data:', err);
     } finally {
       setLoading(false);
@@ -159,6 +204,10 @@ function App() {
   useEffect(() => {
     setSelectedTask(null);
   }, [isArchiveView]);
+
+  if (isAuthCallback) {
+    return <AuthCallback />;
+  }
 
   if (loading) {
     return (

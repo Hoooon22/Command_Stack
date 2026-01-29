@@ -74,7 +74,14 @@ export const taskApi = {
 // Auth API
 export const authApi = {
   // Get login URL - redirect user to this URL for Google OAuth
-  getLoginUrl: () => `${API_BASE_URL.replace('/api', '')}/oauth2/authorization/google`,
+  getLoginUrl: () => {
+    // Electron 앱인지 확인 (preload.js에서 window.electron 노출)
+    const isElectron = typeof window !== 'undefined' && 
+                       'electron' in window && 
+                       window.electron !== undefined;
+    const source = isElectron ? 'app' : 'web';
+    return `${API_BASE_URL.replace('/api', '')}/oauth2/authorization/google?source=${source}`;
+  },
   
   // Get current user info
   getCurrentUser: () => apiCall<User>('/auth/me'),
@@ -91,6 +98,13 @@ export const authApi = {
   
   // Logout
   logout: () => apiCall<void>('/auth/logout', { method: 'POST' }),
+
+  exchangeToken: async (token: string): Promise<void> => {
+    await apiCall<void>('/auth/exchange', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
 };
 
 // Calendar API

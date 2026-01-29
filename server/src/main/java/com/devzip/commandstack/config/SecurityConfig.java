@@ -6,6 +6,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -17,6 +18,12 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+        private final ClientRegistrationRepository clientRegistrationRepository;
+
+        public SecurityConfig(ClientRegistrationRepository clientRegistrationRepository) {
+                this.clientRegistrationRepository = clientRegistrationRepository;
+        }
 
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -36,6 +43,10 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/calendar/**").authenticated()
                                                 .anyRequest().permitAll())
                                 .oauth2Login(oauth2 -> oauth2
+                                                .authorizationEndpoint(authorization -> authorization
+                                                                .authorizationRequestResolver(
+                                                                                new CustomAuthorizationRequestResolver(
+                                                                                                clientRegistrationRepository)))
                                                 .defaultSuccessUrl("/api/auth/success", true)
                                                 .failureUrl("/api/auth/failure"))
                                 .logout(logout -> logout
