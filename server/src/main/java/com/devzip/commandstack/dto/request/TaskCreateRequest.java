@@ -14,16 +14,18 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class TaskCreateRequest {
 
-    @NotBlank(message = "Command syntax is required")
+    @NotBlank(message = "Task title is required")
     private String syntax;
 
     private String details;
 
-    @NotNull(message = "Command type is required")
+    @NotNull(message = "Task type is required")
     private TaskType type;
 
     @NotNull(message = "Context ID is required")
     private Long contextId;
+
+    private LocalDateTime startedAt;
 
     private LocalDateTime deadline;
 

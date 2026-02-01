@@ -113,13 +113,13 @@ export default function ContextExplorer({
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
                 <label className="block text-xs text-terminal-text/60 mb-1 font-mono">
-                  Task Syntax
+                  Task Title
                 </label>
                 <input
                   type="text"
                   value={formData.syntax}
                   onChange={(e) => setFormData({ ...formData, syntax: e.target.value })}
-                  placeholder="Enter command description..."
+                  placeholder="Enter task title..."
                   className="w-full px-3 py-2 bg-terminal-bg text-terminal-text border border-terminal-border rounded font-mono text-sm outline-none focus:border-terminal-green"
                   autoFocus
                 />

@@ -89,12 +89,14 @@ public class Task {
         this.deadline = deadline;
     }
 
-    public void update(String syntax, String details, TaskType type, Long contextId, LocalDateTime deadline,
+    public void update(String syntax, String details, TaskType type, Long contextId, LocalDateTime startedAt,
+            LocalDateTime deadline,
             boolean syncToGoogle) {
         this.syntax = syntax;
         this.details = details;
         this.type = type;
         this.contextId = contextId;
+        this.startedAt = startedAt;
         this.deadline = deadline;
         this.syncToGoogle = syncToGoogle;
     }
@@ -109,6 +111,10 @@ public class Task {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public void setStartedAt(LocalDateTime startedAt) {
+        this.startedAt = startedAt;
     }
 
     public enum TaskStatus {

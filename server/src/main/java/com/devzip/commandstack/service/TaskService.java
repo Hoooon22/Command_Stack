@@ -31,6 +31,7 @@ public class TaskService {
                 .status(TaskStatus.PENDING)
                 .type(request.getType())
                 .contextId(request.getContextId())
+                .startedAt(request.getStartedAt())
                 .deadline(request.getDeadline())
                 .syncToGoogle(request.isSyncToGoogle())
                 .build();
@@ -92,6 +93,7 @@ public class TaskService {
                 request.getDetails(),
                 request.getType(),
                 request.getContextId(),
+                request.getStartedAt(),
                 request.getDeadline(),
                 request.isSyncToGoogle());
 

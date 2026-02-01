@@ -124,7 +124,20 @@ export default function CalendarBoard({ tasks, contexts, onTaskClick, onCreateTa
       .filter(task => task.type === 'SCHEDULE' && task.startedAt && task.deadline)
       .map(task => {
         const startDate = new Date(task.startedAt!);
-        const endDate = new Date(task.deadline!);
+        let endDate = new Date(task.deadline!);
+        
+        // 종일 이벤트(all-day event) 처리: Google Calendar API는 종료일을 다음 날 00:00으로 반환함
+        // 예: 3/5 하루 이벤트 → end=3/6T00:00:00
+        // 종료 시간이 자정(00:00)이고 시작일과 다르면 하루를 빼서 실제 종료일로 보정
+        if (endDate.getHours() === 0 && endDate.getMinutes() === 0 && endDate.getSeconds() === 0) {
+          const adjustedEnd = new Date(endDate);
+          adjustedEnd.setDate(adjustedEnd.getDate() - 1);
+          // 보정 후에도 시작일보다 이전이 되지 않도록 체크
+          if (adjustedEnd >= startDate) {
+            endDate = adjustedEnd;
+          }
+        }
+        
         const spanStart = startDate <= endDate ? startDate : endDate;
         const spanEnd = startDate <= endDate ? endDate : startDate;
         return { task, spanStart, spanEnd };

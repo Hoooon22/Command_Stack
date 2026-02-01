@@ -70,7 +70,7 @@ export default function TaskDetailModal({
             <Terminal className="text-terminal-green" size={24} />
             <div>
               <h2 className="text-lg font-bold text-terminal-green font-mono">
-                Command Details
+                Task Details
               </h2>
               <p className="text-xs text-terminal-text/50 font-mono mt-1">
                 PID: {task.id}
@@ -87,10 +87,10 @@ export default function TaskDetailModal({
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Command Syntax */}
+          {/* Task Title */}
           <div>
             <label className="block text-xs text-terminal-text/50 font-mono mb-2">
-              COMMAND SYNTAX
+              TASK TITLE
             </label>
             <div className="bg-terminal-border/10 border border-terminal-border rounded p-4">
               <p className="text-terminal-text font-mono text-sm leading-relaxed">
@@ -242,7 +242,7 @@ export default function TaskDetailModal({
               {onDelete && task.status !== 'EXIT_SUCCESS' && (
                 <button
                   onClick={() => {
-                    if (confirm('Are you sure you want to kill this command?')) {
+                    if (confirm('Are you sure you want to kill this task?')) {
                       onDelete(task.id);
                       onClose();
                     }

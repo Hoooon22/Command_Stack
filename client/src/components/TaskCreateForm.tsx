@@ -23,6 +23,8 @@ export default function TaskCreateForm({
   const [details, setDetails] = useState('');
   const [type, setType] = useState<Task['type']>('TASK');
   const [contextId, setContextId] = useState(contexts[0]?.id || 1);
+  const [startDate, setStartDate] = useState('');
+  const [startTime, setStartTime] = useState('');
   const [deadlineDate, setDeadlineDate] = useState('');
   const [deadlineTime, setDeadlineTime] = useState('');
   const [syncToGoogle, setSyncToGoogle] = useState(false);
@@ -36,6 +38,13 @@ export default function TaskCreateForm({
       setType(initialData.type);
       setContextId(initialData.contextId);
       
+      if (initialData.startedAt) {
+        const date = new Date(initialData.startedAt);
+        const dateStr = date.toISOString().split('T')[0];
+        const timeStr = date.toTimeString().slice(0, 5);
+        setStartDate(dateStr);
+        setStartTime(timeStr);
+      }
       if (initialData.deadline) {
         const date = new Date(initialData.deadline);
         const dateStr = date.toISOString().split('T')[0];
@@ -61,10 +70,23 @@ export default function TaskCreateForm({
     }
   }, [prefilledDeadline, initialData]);
 
+  // type이 SCHEDULE로 변경될 때 시작일 기본값 설정
+  useEffect(() => {
+    if (type === 'SCHEDULE' && !startDate) {
+      const today = new Date();
+      setStartDate(today.toISOString().split('T')[0]);
+      setStartTime('09:00');
+    }
+  }, [type, startDate]);
+
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
 
     if (!syntax.trim()) return;
+
+    const startedAt = type === 'SCHEDULE' && startDate && startTime
+      ? new Date(`${startDate}T${startTime}:00`).toISOString()
+      : undefined;
 
     const deadline = deadlineDate && deadlineTime
       ? new Date(`${deadlineDate}T${deadlineTime}:00`).toISOString()
@@ -76,6 +98,7 @@ export default function TaskCreateForm({
       status: initialData ? initialData.status : 'PENDING',
       type,
       contextId,
+      startedAt,
       deadline,
       syncToGoogle,
     });
@@ -107,7 +130,7 @@ export default function TaskCreateForm({
           <div className="flex items-center gap-2">
             <Terminal size={20} className="text-terminal-green" />
             <h2 className="text-lg font-mono text-terminal-green">
-              {initialData ? 'Edit Command' : 'Push New Command'}
+              {initialData ? 'Edit Task' : 'Push New Task'}
             </h2>
           </div>
           <button
@@ -123,13 +146,13 @@ export default function TaskCreateForm({
           {/* Syntax */}
           <div>
             <label className="block text-xs font-mono text-terminal-green mb-2">
-              Command Syntax *
+              Task Title *
             </label>
             <input
               type="text"
               value={syntax}
               onChange={(e) => setSyntax(e.target.value)}
-              placeholder="e.g., Deploy to production"
+              placeholder="e.g., Deploy to production, Fix login bug..."
               className="w-full bg-terminal-bg border border-terminal-border rounded px-3 py-2
                          text-terminal-text font-mono text-sm outline-none
                          focus:border-terminal-green transition-colors
@@ -201,10 +224,37 @@ export default function TaskCreateForm({
             </div>
           </div>
 
-          {/* Deadline */}
+          {/* Start Date (SCHEDULE only) */}
+          {type === 'SCHEDULE' && (
+            <div>
+              <label className="block text-xs font-mono text-terminal-green mb-2">
+                Start Date
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-terminal-bg border border-terminal-border rounded px-3 py-2
+                             text-terminal-text font-mono text-sm outline-none
+                             focus:border-terminal-green transition-colors cursor-pointer"
+                />
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="bg-terminal-bg border border-terminal-border rounded px-3 py-2
+                             text-terminal-text font-mono text-sm outline-none
+                             focus:border-terminal-green transition-colors cursor-pointer"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Deadline / End Date */}
           <div>
             <label className="block text-xs font-mono text-terminal-green mb-2">
-              Deadline
+              {type === 'SCHEDULE' ? 'End Date' : 'Deadline'}
             </label>
             <div className="grid grid-cols-2 gap-4">
               <input

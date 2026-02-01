@@ -72,13 +72,14 @@ public class GoogleCalendarService {
                     .setSummary(task.getSyntax())
                     .setDescription(task.getDetails());
 
-            // 시작 시간 설정 (deadline이 있으면 그 시간, 없으면 현재 시간)
-            LocalDateTime startTime = task.getDeadline() != null
-                    ? task.getDeadline().minusHours(1)
-                    : LocalDateTime.now();
+            // 시작 시간 설정 (startedAt이 있으면 사용, 없으면 deadline-1시간 또는 현재 시간)
+            LocalDateTime startTime = task.getStartedAt() != null
+                    ? task.getStartedAt()
+                    : (task.getDeadline() != null ? task.getDeadline().minusHours(1) : LocalDateTime.now());
             LocalDateTime endTime = task.getDeadline() != null
                     ? task.getDeadline()
-                    : LocalDateTime.now().plusHours(1);
+                    : (task.getStartedAt() != null ? task.getStartedAt().plusHours(1)
+                            : LocalDateTime.now().plusHours(1));
 
             EventDateTime start = new EventDateTime()
                     .setDateTime(new com.google.api.client.util.DateTime(
@@ -119,9 +120,14 @@ public class GoogleCalendarService {
             event.setSummary(task.getSyntax());
             event.setDescription(task.getDetails());
 
-            if (task.getDeadline() != null) {
-                LocalDateTime startTime = task.getDeadline().minusHours(1);
-                LocalDateTime endTime = task.getDeadline();
+            if (task.getDeadline() != null || task.getStartedAt() != null) {
+                LocalDateTime startTime = task.getStartedAt() != null
+                        ? task.getStartedAt()
+                        : (task.getDeadline() != null ? task.getDeadline().minusHours(1) : LocalDateTime.now());
+                LocalDateTime endTime = task.getDeadline() != null
+                        ? task.getDeadline()
+                        : (task.getStartedAt() != null ? task.getStartedAt().plusHours(1)
+                                : LocalDateTime.now().plusHours(1));
 
                 EventDateTime start = new EventDateTime()
                         .setDateTime(new com.google.api.client.util.DateTime(
@@ -242,27 +248,17 @@ public class GoogleCalendarService {
                     .ifPresentOrElse(task -> {
                         // 기존 Task 업데이트
                         LocalDateTime deadline = parseDateTime(event.getEnd());
-                        // LocalDateTime startedAt = parseDateTime(event.getStart()); // Unused
-
-                        // update 메서드 활용 (단, startedAt 등은 별도 setter 필요할 수 있음. 여기서는 빌더 패턴이나 setter 사용)
-                        // Task 엔티티에 setter가 제한적이므로 update 메서드를 보강하거나 필요한 필드만 변경
-                        // 여기서는 간단히 주요 필드만 업데이트 로직 구현 (Task 엔티티에 메서드 추가 없이)
-                        // 하지만 Task는 불변성을 위해 setter를 안 쓰는 추세라면 update 메서드 사용해야 함.
-                        // Task.java에 update 메서드가 있지만 startedAt은 업데이트 안 함.
-                        // 일단은 기존 update 메서드 사용하고 deadline만 반영.
+                        LocalDateTime startedAt = parseDateTime(event.getStart());
 
                         task.update(
                                 event.getSummary(),
                                 event.getDescription(),
                                 Task.TaskType.SCHEDULE,
                                 task.getContextId(), // 기존 컨텍스트 유지
+                                startedAt,
                                 deadline,
                                 true // syncToGoogle 유지
                         );
-
-                        // startedAt 업데이트가 필요하다면 Task에 메서드 추가 혹은 Reflection 사용...
-                        // 하지만 편의상 넘어가거나 TaskStatus가 EXECUTING일 때만 의미가 있는데 SCHEDULE은 항상?
-                        // 여기서는 로직 단순화를 위해 넘어감.
 
                     }, () -> {
                         // 새 Task 생성
