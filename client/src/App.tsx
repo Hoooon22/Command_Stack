@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import ViewSwitcher, { type ViewMode } from './components/ViewSwitcher';
 import ScheduleDashboard from './components/ScheduleDashboard';
 import ContextExplorer from './components/ContextExplorer';
+import MemoBoard from './components/MemoBoard';
 import ConsoleInput from './components/ConsoleInput';
 import TaskDetailModal from './components/TaskDetailModal';
 import TaskCreateForm from './components/TaskCreateForm';
@@ -278,7 +279,7 @@ function App() {
             isArchiveView={isArchiveView}
             onToggleArchive={() => setIsArchiveView(true)}
           />
-        ) : (
+        ) : viewMode === 'context' ? (
           <ContextExplorer
             contexts={contexts}
             tasks={tasks}
@@ -287,6 +288,8 @@ function App() {
             onUpdateContext={handleUpdateContext}
             onTaskClick={handleTaskClick}
           />
+        ) : (
+          <MemoBoard />
         )}
       </div>
 

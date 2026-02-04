@@ -1,6 +1,6 @@
-import { Calendar, FolderTree } from 'lucide-react';
+import { Calendar, FolderTree, StickyNote } from 'lucide-react';
 
-export type ViewMode = 'schedule' | 'context';
+export type ViewMode = 'schedule' | 'context' | 'memo';
 
 interface ViewSwitcherProps {
   currentView: ViewMode;
@@ -36,6 +36,20 @@ export default function ViewSwitcher({ currentView, onViewChange }: ViewSwitcher
       >
         <FolderTree size={16} />
         Context Mode
+      </button>
+
+      <button
+        onClick={() => onViewChange('memo')}
+        className={`
+          flex items-center gap-2 px-4 py-2 rounded font-mono text-sm
+          transition-colors
+          ${currentView === 'memo'
+            ? 'bg-terminal-green/20 text-terminal-green border border-terminal-green'
+            : 'text-terminal-text/60 hover:text-terminal-text hover:bg-terminal-border/30'}
+        `}
+      >
+        <StickyNote size={16} />
+        Memo Mode
       </button>
     </div>
   );
