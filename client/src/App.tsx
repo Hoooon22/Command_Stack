@@ -311,6 +311,10 @@ function App() {
           onClose={() => setSelectedTask(null)}
           onStatusChange={isArchiveView ? undefined : handleStatusChange}
           onDelete={isArchiveView ? undefined : handleDeleteTask}
+          onEdit={isArchiveView ? undefined : (task) => {
+            setEditingTask(task);
+            setSelectedTask(null);
+          }}
         />
       )}
 

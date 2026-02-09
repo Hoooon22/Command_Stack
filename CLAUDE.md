@@ -67,3 +67,8 @@ DO NOT use standard "Todo" terminology. Use the following mapping:
 ## 7. Google Calendar Sync
 
 - Every Command should be synced with Google Calendar.
+
+## 8. Github and Program version sync
+
+- Every Command should be synced with Github.
+- Every Program version should be synced with Github.

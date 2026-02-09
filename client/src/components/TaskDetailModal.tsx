@@ -1,4 +1,4 @@
-import { X, Calendar, Clock, Terminal, CheckCircle2, XCircle, Play, ListChecks, CalendarClock } from 'lucide-react';
+import { X, Calendar, Clock, Terminal, CheckCircle2, XCircle, Play, ListChecks, CalendarClock, Edit2 } from 'lucide-react';
 import type { Task, Context } from '../types';
 
 interface TaskDetailModalProps {
@@ -7,6 +7,7 @@ interface TaskDetailModalProps {
   onClose: () => void;
   onStatusChange?: (id: number, status: Task['status']) => void;
   onDelete?: (id: number) => void;
+  onEdit?: (task: Task) => void;
 }
 
 export default function TaskDetailModal({
@@ -15,6 +16,7 @@ export default function TaskDetailModal({
   onClose,
   onStatusChange,
   onDelete,
+  onEdit,
 }: TaskDetailModalProps) {
   const getStatusIcon = () => {
     switch (task.status) {
@@ -157,11 +159,35 @@ export default function TaskDetailModal({
             </div>
           )}
 
-          {/* Deadline */}
+          {/* Start Time (SCHEDULE only) */}
+          {task.type === 'SCHEDULE' && task.startedAt && (
+            <div>
+              <label className="block text-xs text-terminal-text/50 font-mono mb-2">
+                START TIME
+              </label>
+              <div className="flex items-center gap-2 bg-terminal-border/10 border border-terminal-border rounded p-3">
+                <Clock size={20} className="text-terminal-green" />
+                <div className="flex-1">
+                  <p className="text-terminal-text font-mono text-sm">
+                    {new Date(task.startedAt).toLocaleString('ko-KR', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Deadline / End Time */}
           {task.deadline && (
             <div>
               <label className="block text-xs text-terminal-text/50 font-mono mb-2">
-                DEADLINE
+                {task.type === 'SCHEDULE' ? 'END TIME' : 'DEADLINE'}
               </label>
               <div className="flex items-center gap-2 bg-terminal-border/10 border border-terminal-border rounded p-3">
                 <Calendar size={20} className="text-terminal-text/50" />
@@ -199,7 +225,21 @@ export default function TaskDetailModal({
             <label className="block text-xs text-terminal-text/50 font-mono mb-3">
               ACTIONS
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              {/* Edit Button */}
+              {onEdit && task.status !== 'EXIT_SUCCESS' && (
+                <button
+                  onClick={() => {
+                    onEdit(task);
+                    onClose();
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-terminal-cyan/20 text-terminal-cyan border border-terminal-cyan rounded hover:bg-terminal-cyan/30 transition-colors font-mono text-sm"
+                >
+                  <Edit2 size={16} />
+                  Edit Task
+                </button>
+              )}
+
               {task.status === 'PENDING' && onStatusChange && task.type === 'SCHEDULE' && (
                 <button
                   onClick={() => {
