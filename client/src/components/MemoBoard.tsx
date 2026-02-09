@@ -192,7 +192,53 @@ export default function MemoBoard() {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       executeCommand(commandInput);
+    } else if (e.key === 'Tab') {
+      e.preventDefault(); // 기본 탭 동작 방지
+      
+      const trimmed = commandInput.trim();
+      const parts = trimmed.split(/\s+/);
+      const command = parts[0]?.toLowerCase();
+      
+      // vi, vim, cat, rm 명령어인 경우만 자동완성
+      if (['vi', 'vim', 'cat', 'rm'].includes(command) && parts.length >= 1) {
+        const partial = parts[1] || ''; // 입력 중인 파일명 (없으면 빈 문자열)
+        const files = Object.keys(memos);
+        
+        // 입력 중인 문자열로 시작하는 파일 찾기
+        const matches = files.filter(f => 
+          f.toLowerCase().startsWith(partial.toLowerCase())
+        );
+        
+        if (matches.length === 1) {
+          // 정확히 하나만 매칭되면 자동완성
+          setCommandInput(`${command} ${matches[0]}`);
+        } else if (matches.length > 1) {
+          // 여러 개 매칭되면 공통 접두사로 자동완성 + 목록 표시
+          const commonPrefix = findCommonPrefix(matches);
+          if (commonPrefix.length > partial.length) {
+            setCommandInput(`${command} ${commonPrefix}`);
+          }
+          // 매칭되는 파일 목록 표시
+          addHistory({ type: 'command', content: `$ ${commandInput}` });
+          addHistory({ type: 'output', content: matches.join('  ') });
+        }
+      }
     }
+  };
+
+  // 문자열 배열의 공통 접두사 찾기
+  const findCommonPrefix = (strings: string[]): string => {
+    if (strings.length === 0) return '';
+    if (strings.length === 1) return strings[0];
+    
+    let prefix = strings[0];
+    for (let i = 1; i < strings.length; i++) {
+      while (!strings[i].toLowerCase().startsWith(prefix.toLowerCase())) {
+        prefix = prefix.slice(0, -1);
+        if (prefix.length === 0) return '';
+      }
+    }
+    return prefix;
   };
 
   const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
