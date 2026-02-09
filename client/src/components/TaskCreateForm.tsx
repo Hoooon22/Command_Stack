@@ -27,7 +27,7 @@ export default function TaskCreateForm({
   const [startTime, setStartTime] = useState('');
   const [deadlineDate, setDeadlineDate] = useState('');
   const [deadlineTime, setDeadlineTime] = useState('');
-  const [syncToGoogle, setSyncToGoogle] = useState(false);
+  const [syncToGoogle, setSyncToGoogle] = useState(true);
   const { isAuthenticated } = useAuth();
 
   // Initialize form data

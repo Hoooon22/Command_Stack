@@ -39,6 +39,7 @@ public class GoogleCalendarService {
 
     private final TaskRepository taskRepository;
     private final ContextRepository contextRepository;
+    private final TokenRefreshService tokenRefreshService;
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
 
     @Value("${google.calendar.application-name:CommandStack}")
@@ -46,14 +47,18 @@ public class GoogleCalendarService {
 
     /**
      * 사용자의 Access Token으로 Calendar 서비스 객체 생성
+     * 토큰이 만료되었거나 곧 만료될 예정이면 자동으로 갱신합니다.
      */
     private Calendar getCalendarService(User user) throws GeneralSecurityException, IOException {
+        // 토큰이 만료되었거나 곧 만료될 예정이면 자동 갱신
+        User refreshedUser = tokenRefreshService.refreshTokenIfNeeded(user);
+
         HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
 
         // Access Token으로 credentials 생성
         AccessToken accessToken = new AccessToken(
-                user.getAccessToken(),
-                Date.from(user.getTokenExpiresAt().atZone(ZoneId.systemDefault()).toInstant()));
+                refreshedUser.getAccessToken(),
+                Date.from(refreshedUser.getTokenExpiresAt().atZone(ZoneId.systemDefault()).toInstant()));
         GoogleCredentials credentials = GoogleCredentials.create(accessToken);
 
         return new Calendar.Builder(httpTransport, JSON_FACTORY, new HttpCredentialsAdapter(credentials))
