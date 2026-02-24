@@ -110,8 +110,8 @@ function startServer() {
   ensureDirectories();
 
   const jarPath = isDev
-    ? path.join(__dirname, '..', 'server', 'build', 'libs', 'commandstack-1.0.11.jar')
-    : path.join(process.resourcesPath, 'server', 'commandstack-1.0.11.jar');
+    ? path.join(__dirname, '..', 'server', 'build', 'libs', 'commandstack-1.0.12.jar')
+    : path.join(process.resourcesPath, 'server', 'commandstack-1.0.12.jar');
 
   console.log('Starting Spring Boot server...');
   console.log('JAR path:', jarPath);
