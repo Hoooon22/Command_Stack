@@ -90,18 +90,6 @@ app.on('open-url', (event, url) => {
   }
 });
 
-// Spring Boot 서버 시작
-function startServer() {
-  ensureDirectories();
-
-  const jarPath = isDev
-    ? path.join(__dirname, '..', 'server', 'build', 'libs', 'commandstack-1.0.10.jar')
-    : path.join(process.resourcesPath, 'server', 'commandstack-1.0.10.jar');
-
-  console.log('Starting Spring Boot server...');
-  console.log('JAR path:', jarPath);
-  console.log('Database path:', path.join(dbPath, 'commandstack'));
-
 // Windows: 딥링크로 실행될 때 (Second Instance Lock)
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -117,8 +105,20 @@ if (!gotTheLock) {
   });
 }
 
-// 로그 파일 스트림 생성
-const logStream = fs.createWriteStream(path.join(logsPath, 'server.log'), { flags: 'a' });
+// Spring Boot 서버 시작
+function startServer() {
+  ensureDirectories();
+
+  const jarPath = isDev
+    ? path.join(__dirname, '..', 'server', 'build', 'libs', 'commandstack-1.0.11.jar')
+    : path.join(process.resourcesPath, 'server', 'commandstack-1.0.11.jar');
+
+  console.log('Starting Spring Boot server...');
+  console.log('JAR path:', jarPath);
+  console.log('Database path:', path.join(dbPath, 'commandstack'));
+
+  // 로그 파일 스트림 생성
+  const logStream = fs.createWriteStream(path.join(logsPath, 'server.log'), { flags: 'a' });
 
   const javaArgs = [
     '-jar',
@@ -190,7 +190,7 @@ function createWindow() {
     minWidth: 1200,
     minHeight: 700,
     backgroundColor: '#1e1e1e',
-    titleBarStyle: 'hiddenInset',
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
