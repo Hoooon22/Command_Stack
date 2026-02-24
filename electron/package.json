@@ -1,6 +1,6 @@
 {
   "name": "commandstack-electron",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "CommandStack - Developer-centric personal management system",
   "author": "Devzip <devzip@devzip.com>",
   "homepage": "https://github.com/Hoooon22/Command_Stack",
@@ -28,6 +28,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "assets/**/*",
       "../client/dist/**/*",
       "../server/build/libs/*.jar"
     ],

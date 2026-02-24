@@ -110,8 +110,8 @@ function startServer() {
   ensureDirectories();
 
   const jarPath = isDev
-    ? path.join(__dirname, '..', 'server', 'build', 'libs', 'commandstack-1.0.12.jar')
-    : path.join(process.resourcesPath, 'server', 'commandstack-1.0.12.jar');
+    ? path.join(__dirname, '..', 'server', 'build', 'libs', 'commandstack-1.0.13.jar')
+    : path.join(process.resourcesPath, 'server', 'commandstack-1.0.13.jar');
 
   console.log('Starting Spring Boot server...');
   console.log('JAR path:', jarPath);
@@ -123,7 +123,7 @@ function startServer() {
   const javaArgs = [
     '-jar',
     jarPath,
-    `--spring.datasource.url=jdbc:h2:file:${path.join(dbPath, 'commandstack')};AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9092`,
+    `--spring.datasource.url=jdbc:h2:file:${path.join(dbPath, 'commandstack').replace(/\\/g, '/')};AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9092`,
     '--spring.h2.console.enabled=false',
     '--spring.jpa.hibernate.ddl-auto=update',
     '--server.port=8090',
@@ -145,6 +145,21 @@ function startServer() {
     const log = `[SERVER ERROR] ${data.toString()}`;
     console.error(log);
     logStream.write(log);
+  });
+
+  serverProcess.on('error', (err) => {
+    const log = `[SERVER SPAWN ERROR] Failed to start Java process: ${err.message}`;
+    console.error(log);
+    logStream.write(log);
+    
+    if (!app.isQuitting) {
+      const { dialog } = require('electron');
+      dialog.showErrorBox(
+        'Server Startup Error',
+        'Could not start the internal server. Please make sure Java (JRE 17+) is installed on your computer.\n\nDetails: ' + err.message
+      );
+      app.quit();
+    }
   });
 
   serverProcess.on('close', (code) => {
